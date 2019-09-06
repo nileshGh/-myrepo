@@ -1,0 +1,262 @@
+@favorite
+Feature: Favorites related meta
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to add favorite
+#Example:And I add "alerts" page to favorite
+#--------------------------------------------------------------------------------------
+Scenario:I add "<pageName>" page to favorite
+  And I click favoriteButton
+  And I wait for newFavoriteName
+  And I execute javascript "$('#newFavorite').val('')"
+  And I type "$<pageName>" in newFavoriteName
+  And I send "ENTER" to newFavoriteName
+  ##WA##Temp Revision: As discussed 30/11 DASH-1772
+  ##WA##And alert box title should be "${favoriteAddMessageHead}"
+  ##WA##And alert box message should be "${favoriteAddMessageText}"
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+  And I click heading
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to verify favorite got added
+#Example:And I verify favorite "alerts" working
+#--------------------------------------------------------------------------------------
+Scenario: I verify favorite "<favoriteName>" working
+    And I wait 5 seconds
+    And I move to favoriteButton
+    And favoriteEntry can be located by javascript
+    """
+    (function(){
+      var linkNode;
+    	$('stl-favorites [ng-click="jumpToFavorite(fave)"]').each(function(){
+    		console.log($(this).text().trim());
+    		if($(this).text().trim()=="$<favoriteName>")
+    		{
+    			linkNode=$(this).find("a");
+    		}
+    	});
+      return linkNode;
+    })()
+    """
+    And favoriteEntry should be displayed
+    And I click favoriteEntry
+    And I click heading
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to remove favorite
+#Example:And I remove "alerts" page from favorite
+#--------------------------------------------------------------------------------------
+Scenario:I remove "<pageName>" page from favorite
+  And I wait 5 seconds
+  And I move to favoriteButton
+  And I move to manageFavoriteButton
+  And I click manageFavoriteButton
+  And I wait for manageFavoriteHeading
+  And favoriteCheckBoxSelected is defined by javascript
+  """
+  (function(){
+    var selectCheckbox,result;
+  	$('#manageFavorites [ng-repeat="fave in favorites"]').each(function(){
+  		console.log($(this).text().trim());
+  		if($(this).text().trim()=="$<pageName>")
+  		{
+  			selectCheckbox=$(this).find("input[type='checkbox']").get(0);
+  		}
+  	});
+     selectCheckbox.click();
+     if($('#manageFavorites button.btn-delete:contains("Remove")').is(":visible"))
+      result="Done";
+      return result;
+  })()
+  """
+  And favoriteCheckBoxSelected should be "Done"
+  And I click removeManageFavoriteButton
+  And I wait for confirmNotificationButton
+  And I click confirmNotificationButton
+  ##WA##Temp Revision: As discussed 30/11
+  ##WA##And alert box title should be "${favoriteRemovedMessageHead}"
+  ##WA##And alert box message should be "${favoriteRemovedMessageText}"
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+  And I click closeManageFavoritesButton
+  And I click heading
+
+ @StepDef
+ #######################################################################################
+ #--------------------------------------------------------------------------------------
+ #Step to verify favorite on user profile screen
+ #Example:And I verify favorite option "alerts" on user profile screen
+ #--------------------------------------------------------------------------------------
+ Scenario:I verify favorite option "<favoriteName>" on user profile screen
+   And I click user profile
+   And favoriteline can be located by javascript "$('span:contains("$<favoriteName>")').get(0)"
+   And favoriteline should be displayed
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to verify favorite is not on user profile screen
+#Example:And I verify favorite option "alerts" is not on user profile screen
+#--------------------------------------------------------------------------------------
+ Scenario:I verify favorite option "<favoriteName>" is not on user profile screen
+   And I wait 5 seconds
+   And I click user profile
+   And favoriteNotPresent is defined by javascript
+   """
+   (function(){
+    result="true";
+    if($('span:contains("$<favoriteName>")').get(0)!=null){
+      result="false";
+    }
+      return result;
+    })()
+   """
+   And favoriteNotPresent should be "true"
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to delete favorite
+#Example:And I delete "alerts" from favorite
+#--------------------------------------------------------------------------------------
+ Scenario:I delete "<pageName>" from favorite
+    And I wait 5 seconds
+    And I click user profile
+    And I wait for heading
+    And delete favorite button can be located by javascript
+    """
+    (function(){
+      rowIndex="";
+      $('[ng-repeat="fave in upc.favorites() | filter: upc.searchFave"]').each(function(index){
+      if($(this).find("span").text()=="$<pageName>"){
+      	rowIndex=index+1;
+      }
+      })
+      	return $('[ng-repeat="fave in upc.favorites() | filter: upc.searchFave"]:nth-child('+rowIndex+') button[ng-click="upc.deleteFavorite(fave,category)"][ng-show="upc.linedUpForDelete != fave"]').get(0);
+      })()
+    """
+    And I wait 5 seconds
+    And I click delete favorite button
+    And delete confirm favorite button can be located by javascript
+    """
+    (function(){
+      rowIndex="";
+      $('[ng-repeat="fave in upc.favorites() | filter: upc.searchFave"]').each(function(index){
+      if($(this).find("span").text()=="$<pageName>"){
+      	rowIndex=index+1;
+      }
+      })
+      	return $('[ng-repeat="fave in upc.favorites() | filter: upc.searchFave"]:nth-child('+rowIndex+') button[ng-click="upc.deleteFavorite(fave,category)"][ng-show="upc.linedUpForDelete == fave"]').get(0);
+      })()
+    """
+    And I click delete confirm favorite button
+    ##WA##Temp Revision: As discussed 30/11
+    ##WA##And alert box title should be "${favoriteRemovedMessageHead}"
+    ##WA##And alert box message should be "${favoriteRemovedMessageText}"
+    And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+    And I click notification dialog if dialogExist
+    And I verify favorite option "$<pageName>" is not on user profile screen
+    And I move to heading
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to export favorite
+#Example:
+#And I verify import and export for "alerts" favorite
+#--------------------------------------------------------------------------------------
+Scenario: I verify import and export for "<favoriteName>" favorite
+  And I click user profile
+  And I wait for heading
+  And select favorite checkbox can be located by javascript
+  """
+  (function(){
+      rowIndex="";
+      $('[ng-repeat="fave in upc.favorites() | filter: upc.searchFave"]').each(function(index){
+      if($(this).find("span").text()=="$<favoriteName>"){
+      	rowIndex=index+1;
+      }
+      })
+      	return $('[ng-repeat="fave in upc.favorites() | filter: upc.searchFave"]:nth-child('+rowIndex+') input[type="checkbox"]').get(0);
+      })()
+  """
+  And I check select favorite checkbox
+  And I wait for the export favorite button
+  And I click the export favorite button
+  And I click the export favorite button
+  And the ok button can be located by javascript "$('[ng-click="ok()"]').get(0)"
+  And I wait for the ok button
+  And I execute javascript
+  """
+    (function(){
+      var d = new Date();
+      d.setTime(d.getTime() + (3*60*1000));
+      var expires = "expires="+ d.toUTCString();
+      document.cookie="exportText="+$('#favoritesExportArea').text()+";"+ expires + ";path=/";
+    })()
+  """
+  And I click the ok button
+  And I login as "functional2" user
+  And I wait 5 seconds
+  And I click user profile
+  And I wait for heading
+  And I click the import favorite button
+  And I wait for the ok button
+  And I execute javascript
+  """
+    (function(){
+      function getCookie(cname) {
+        var name = cname + "=";
+        var decodedCookie = decodeURIComponent(document.cookie);
+        var ca = decodedCookie.split(';');
+        for(var i = 0; i <ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) == ' ') {
+                c = c.substring(1);
+            }
+            if (c.indexOf(name) == 0) {
+                return c.substring(name.length, c.length);
+            }
+        }
+        return "";
+    }
+    $('#favoritesImportArea').get(0).innerText=getCookie("exportText");
+    })()
+  """
+  And I click the ok button
+  ##WA##Temp Revision: As discussed 30/11
+  ##WA##And alert box title should be "${favoriteUpdateMessageHead}"
+  ##WA##And alert box message should be "${favoriteUpdateMessageText}"
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+  And I login as "functional" user
+  And I wait 5 seconds
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to create duplicate favorite name
+#Example:
+#And I create favorite with duplicate name "alerts"
+#--------------------------------------------------------------------------------------
+Scenario: I create favorite with duplicate name "<favoriteName>"
+  And I click favoriteButton
+  And I wait for newFavoriteName
+  And I execute javascript "$('#newFavorite').val('')"
+  And I type "$<favoriteName>" in newFavoriteName
+  And I send "ENTER" to newFavoriteName
+  And duplicateFavoriteAlertHeader can be located by javascript "$('.sweet-alert h2')"
+  And duplicateFavoriteAlertText can be located by javascript "$('.sweet-alert p')"
+  And duplicateFavoriteAlertHeader should be "Duplicate Name!"
+  And duplicateFavoriteAlertText should be "There is already an existing favourite with this name. Please use manage favourites to modify other favourites."
+  And I click confirmNotificationButton

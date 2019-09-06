@@ -1,0 +1,176 @@
+@ladder
+Feature: Date action using normal gwen
+
+@StepDef
+##############################################
+#---------------------------------------------
+#Step to set date using calender
+#Example:And I enter start date "18 Sep 2017"
+#---------------------------------------------
+Scenario: I enter <dateIs> date "<date>"
+  And I select $<dateIs> date $<date>
+
+@StepDef
+##############################################
+#---------------------------------------------
+#Step to set date using calender
+#Example:And I select start date 18 Sep 2017
+#---------------------------------------------
+Scenario: I select <dateIs> date <day> <month> <year>
+    And I scroll to the bottom of $<dateIs> date calender
+    And I click $<dateIs> date calender
+    And yearSelector can be located by class name "datepicker-switch"
+    And I click yearSelector
+    And monthSelector can be located by css selector "[class="datepicker-months"] [class="datepicker-switch"]"
+    And I click monthSelector
+    And select year can be located by xpath "//table/tbody/tr/td/span[contains(text(),'$<year>')]"
+    And I click select year
+    And select month can be located by xpath "//table/tbody/tr/td/span[contains(text(),'$<month>')]"
+    And I click select month
+    And select date can be located by xpath "//table/tbody//td[not(contains(@class, 'disabled')) and not(contains(@class, 'old day')) and (text()='$<day>')]"
+    And I click select date
+
+@StepDef
+##############################################
+#---------------------------------------------
+#Step to set value date filter
+#Example:And I set value date 18 Sep 2017
+#---------------------------------------------
+Scenario: I set value date in <selector> <day> <month> <year>
+    #And I scroll to the bottom of transactionGrid
+    And I click $<selector>
+    And yearSelector can be located by class name "datepicker-switch"
+    And I click yearSelector
+    And monthSelector can be located by css selector "[class="datepicker-months"] [class="datepicker-switch"]"
+    And I click monthSelector
+    And select year can be located by xpath "//table/tbody/tr/td/span[contains(text(),'$<year>')]"
+    And I click select year
+    And select month can be located by xpath "//table/tbody/tr/td/span[contains(text(),'$<month>')]"
+    And I click select month
+    And select date can be located by xpath "//table/tbody//td[not(contains(@class, 'disabled')) and not(contains(@class, 'old day')) and (text()='$<day>')]"
+    And I click select date
+
+@StepDef
+##############################################
+#---------------------------------------------
+#Step to get date related variables to be set
+#Example:When I get full from date for "10/07/2017"
+#---------------------------------------------
+Scenario:I get full <type> date for "<fromDate>"
+	And $<type>DateYear is defined by javascript
+		"""
+		(function(){
+			var m = moment();
+			var newDate = moment("$<fromDate>", "DD/MM/YYYY");
+			m.set(newDate.toObject());
+			var fullYear=m.format("YYYY");
+			return fullYear;
+		})()
+		"""
+	And $<type>DateMonth is defined by javascript
+		"""
+		(function(){
+			var m = moment();
+			var newDate = moment("$<fromDate>", "DD/MM/YYYY");
+			m.set(newDate.toObject());
+			var fullMonth=m.format("MMMM");
+			return fullMonth;
+		})()
+		"""
+	And $<type>DateDay is defined by javascript
+		"""
+		(function(){
+			var m = moment();
+			var newDate = moment("$<fromDate>", "DD/MM/YYYY");
+			m.set(newDate.toObject());
+			var fullDay=m.format("D");
+			return fullDay;
+		})()
+		"""
+
+@StepDef
+##############################################
+#---------------------------------------------
+#Step to set start and end date
+#Example:And I set ladder daterange from "10/07/2017" to "23/08/2017"
+#Example:And I set ladder daterange from "10/07/2017" to ""
+#---------------------------------------------
+Scenario: I set <type> daterange from "<fromDate>" to "<toDate>"
+  And I wait for page to load
+  And I scroll to top of page
+  And toDatePresent is defined by javascript "(function(){return "$<toDate>"!=""})()"
+  And toDateAbsent is defined by javascript "(function(){return "$<toDate>"==""})()"
+	And I get full from date for "$<fromDate>"
+	And I get full to date for "$<toDate>" if toDatePresent
+	And I click $<type> date range selector
+  And choose year can be located by javascript "$('bs-days-calendar-view:first button[class*="current"]').get(1)"
+  And I wait for choose year
+	And I click choose year
+	And selectToFrom year can be located by javascript "$('bs-years-calendar-view td:contains("${fromDateYear}")')"
+  And I wait for selectToFrom year
+	And I click selectToFrom year
+	And select from month can be located by javascript "$('bs-month-calendar-view:first td:contains("${fromDateMonth}")')"
+  And I wait for select from month
+	And I click select from month
+	And select from day can be located by javascript "$('bs-days-calendar-view:first td:contains("${fromDateDay}")').not(".week").find(' span[class!="is-other-month"]').get(0);"
+  And I wait for select from day
+	And I click select from day
+	And select to day can be located by javascript
+		"""
+		(function(){
+			var toDaySelector;
+			function getSelector(){
+				if(toDaySelector!=null){
+					console.log("Day selectory not yet found");
+					return;
+				}
+				else if($('bs-days-calendar-view:first button[class*="current"] span:contains("${toDateMonth}")').is(":visible")){
+					console.log("Month match in from calendar");
+					toDaySelector=$('bs-days-calendar-view:first td:contains("${toDateDay}")').not(".week").find(' span[class!="is-other-month"]').get(0);
+				}
+				else if($('bs-days-calendar-view:last button[class*="current"] span:contains("${toDateMonth}")').is(":visible")){
+					console.log("Month match in to calendar");
+					toDaySelector=$('bs-days-calendar-view:last td:contains("${toDateDay}")').not(".week").find(' span[class!="is-other-month"]').get(0);
+				}
+				else{
+					console.log("Month did not match in to/from calendar going to next page");
+					$('bs-days-calendar-view:last button[class="next"]').click();
+					getSelector();
+				}
+			}
+			getSelector();
+			return toDaySelector;
+		})()
+		""" if toDatePresent
+    And I wait for select to day if toDatePresent
+    And I click select to day if toDatePresent
+    And I wait for select from day if toDateAbsent
+    And I click select from day if toDateAbsent
+    And I wait for page to load
+
+@StepDef
+##############################################
+#---------------------------------------------
+#Step to select date on sweep dashboard
+#Example: And I set date "10/07/2017" on sweep dashboard
+#---------------------------------------------
+Scenario: I set date "<fromDate>" on <type> dashboard
+  And I wait for page to load
+  And I scroll to top of page
+  And I get full from date for "$<fromDate>"
+	And I click $<type>DateSelector
+  And choose year can be located by javascript "$('bs-days-calendar-view:first button[class*="current"]').get(1)"
+  And I wait for choose year
+	And I click choose year
+	And selectToFrom year can be located by javascript "$('bs-years-calendar-view td:contains("${fromDateYear}")')"
+  And I wait for selectToFrom year
+	And I click selectToFrom year
+	And select from month can be located by javascript "$('bs-month-calendar-view:first td:contains("${fromDateMonth}")')"
+  And I wait for select from month
+	And I click select from month
+	And select from day can be located by javascript "$('bs-days-calendar-view:first td:contains("${fromDateDay}")').not(".week").find(' span[class!="is-other-month"]').get(0);"
+  And I wait for select from day
+	And I click select from day
+  And I wait for page to load
+
+

@@ -1,0 +1,347 @@
+@strategy
+Feature: strategy page Meta
+
+@StepDef
+###########################################################################################
+#------------------------------------------------------------------------------------------
+#Verifies current page is strategy page. All Variables are defined inside common.meta file.
+#------------------------------------------------------------------------------------------
+Scenario:I go to the strategy page
+  Given I navigate to module strategy
+    And heading should be "Strategy"
+    And smallmenubar should be displayed
+    And create strategy should be displayed
+     And I scroll to top of page
+     And I wait for page to load
+
+@StepDef
+#######################################
+#--------------------------------------
+#Verifies current page is Strategy page
+#--------------------------------------
+Scenario: I am on the strategy page
+    And heading should be "Strategy"
+     And I scroll to top of page
+
+@StepDef
+################################################
+#-----------------------------------------------
+#Step to enter strategy name
+#Example:And  I enter strategyname "strategyABC"
+#-----------------------------------------------
+Scenario:I enter name "<strategyName>"
+  And value is present is defined by javascript "(function() {return "$<strategyName>" != "''"})();"
+  And strategyName is "$<strategyName>" if value is present
+  And I enter "${strategyName}" in strategy name input field if value is present
+
+@StepDef
+################################################
+#-----------------------------------------------
+#Step to enter strategy description
+#Example:And  I enter description "descriptionABC"
+#-----------------------------------------------
+Scenario:I enter description "<strategyDescription>"
+  And value is present is defined by javascript "(function() {return "$<strategyDescription>" != "''"})();"
+  And strategyDescription is "$<strategyDescription>" if value is present
+  And I enter "${strategyDescription}" in strategy description input field if value is present
+
+@StepDef
+@DataTable(header="top")
+#########################################################################################################
+#--------------------------------------------------------------------------------------------------------
+#Step to create strategy
+#Example:
+#And I create strategy
+#     |strategyName|strategyDescription|funds|
+#     |strategy001|description001|HSBC Growth Fund |
+#--------------------------------------------------------------------------------------------------------
+Scenario: I create strategy
+  And I create strategy with "${data[strategyName]}" "${data[strategyDescription]}" "${data[funds]}" for each data record
+
+@StepDef
+#########################################################################################################
+#--------------------------------------------------------------------------------------------------------
+#Step to create strategy and verify startegy got created
+#Example:
+#And I create strategy with "strategyName" "strategyDesc" "fund"
+#--------------------------------------------------------------------------------------------------------
+Scenario: I create strategy with "<strategyName>" "<strategyDesc>" "<fund>"
+  And I click create strategy
+  And strategy form should be displayed
+  And I enter name "$<strategyName>"
+  And I enter description "$<strategyDesc>"
+  And fundIs is "$<fund>"
+  And value is present is defined by javascript "(function() {return "$<fund>" != "''"})();"
+  And I select "${selectfund}" in fund selector for each selectfund in fundIs delimited by "," if value is present
+  And I click strategy create button
+  And I wait for strategy edit button
+  And I click strategy cancel button
+  And I wait for create strategy
+  And I wait for grid header text
+  And I verify strategy "${strategyName}" is present on strategy page
+  And I verify for strategy "${strategyName}" Description is "${strategyDescription}"
+  And I verify for strategy "${strategyName}" Funds is "${selectfund}" for each selectfund in fundIs delimited by "," if value is present
+
+@StepDef
+@DataTable(header="top")
+#########################################################################################################
+#--------------------------------------------------------------------------------------------------------
+#Step to edit fields of strategy
+#Example:
+#And I edit fields of strategy
+#      |strategyName|strategyDescription|funds|
+#      |strategy001|description001|HSBC Growth Fund |
+#--------------------------------------------------------------------------------------------------------
+Scenario: I edit fields of strategy
+  And I edit strategy with "${data[strategyName]}" "${data[strategyDescription]}" "${data[funds]}" for each data record
+
+@StepDef
+#########################################################################################################
+#--------------------------------------------------------------------------------------------------------
+#Step to edit strategy and verify the changes
+#Example:
+#And I edit strategy with "strategyName" "strategyDesc" "fund"
+#--------------------------------------------------------------------------------------------------------
+Scenario: I edit strategy with "<strategyName>" "<strategyDesc>" "<fund>"
+  And I navigate to strategy page of strategy "${strategyName}" to edit
+  And I enter name "$<strategyName>"
+  And I enter description "$<strategyDesc>"
+  And fundIs is "$<fund>"
+  And value is present is defined by javascript "(function() {return "$<fund>" != "''"})();"
+  And I select "${selectfund}" in fund selector for each selectfund in fundIs delimited by "," if value is present
+   And I scroll to top of page
+  And I click strategy save button
+  And notification dialog should be displayed
+  And I click notification dialog
+  And I wait for strategy edit button
+  And I click strategy cancel button
+  And I wait for grid header text
+  And I verify strategy "${strategyName}" is present on strategy page
+  And I verify for strategy "${strategyName}" Description is "${strategyDescription}"
+  And I verify for strategy "${strategyName}" Funds is "${selectfund}" for each selectfund in fundIs delimited by "," if value is present
+
+@StepDef
+@DataTable(header="top")
+#####################################################################
+#--------------------------------------------------------------------
+#Step to verify create strategy with duplicate name
+#--------------------------------------------------------------------
+Scenario: I create strategy with duplicate name
+  And I click create strategy
+  And strategy form should be displayed
+  And I enter name "${strategyName}"
+  And I enter description "${strategyDescription}"
+  And I select "${data[fund]}" in fund selector for each data record
+  And I click strategy create button
+  And notification dialog should be displayed
+  And alert box message should be "A strategy with name ${strategyName} already exists"
+  And I click strategy cancel button
+
+@StepDef
+#####################################################################
+#--------------------------------------------------------------------
+#Step to navigate to strategy page
+#Example:And I navigate to strategy page
+#--------------------------------------------------------------------
+Scenario:I navigate to strategy page
+  And I execute javascript "$('#sliderChart [href="#/strategy/all"]').click()"
+
+
+@StepDef
+#####################################################################
+#--------------------------------------------------------------------
+#Step to verify strategy is present in strategy table
+#Example:And I verify strategy "test012" is present on strategy page
+#--------------------------------------------------------------------
+Scenario: I verify strategy "<strategyName>" is present on strategy page
+  And createstrategyResult is defined by javascript
+    """
+    (function(){
+        a=[];result="";
+          function getData() {
+           $('[ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"] [ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid"]:nth-child(1)')
+            .each(function (index)
+              { if($(this).text().trim().indexOf("$<strategyName>") >= 0 ) { index++;
+                         result = "Done";
+               console.log("$(this).text()");
+              a.push($(this).text())
+                    }
+                })
+      if(a.length==0) {
+         $('#strategies-grid  [ng-click="pageNextPageClick()"]').get(0).click();
+         getData();
+       }
+      else {
+             result = "Done"
+              }
+          }
+          getData();
+          return result;
+        })();
+    """
+  Then createstrategyResult should be "Done"
+
+
+@StepDef
+############################################################
+#-----------------------------------------------------------
+#Step verify each parameter of fund on fund grid
+#Example:And I verify for strategy "FundAbc" Code is "Code12345"
+#-----------------------------------------------------------
+Scenario:I verify for strategy "<fundName>" <property> is "<data>"
+ And result is defined by javascript
+  """
+  (function getResult(){
+    var result;
+    $('[ng-repeat="col in colContainer.renderedColumns track by col.uid"] div[role="button"] span:nth-child(1)')
+        .each(function (index) { if($(this).text().trim()=="Name") {console.log($(this).text()); index++; columnIndex=index }} );
+    $('[ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"] [ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid"]:nth-child('+columnIndex+')')
+		.each(function (index) { if($(this).text().trim()=="$<fundName>") {console.log($(this).text());index++; rowIndex=index;  $('[ng-repeat="col in colContainer.renderedColumns track by col.uid"] div[role="button"] span:nth-child(1)')
+          .each(function (index) { if($(this).text().trim()=="$<property>") { index++; columnIndex=index }} );
+       $('[ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+rowIndex+')  [ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid"]:nth-child('+columnIndex+')')
+  		    .each(function (index) { actual=$(this).text().trim()} )
+      if (actual.indexOf("$<data>") >= 0) {result = "Done"}}} );
+    return result;
+  })()
+  """
+And result should be "Done"
+
+
+@StepDef
+#################################################
+#------------------------------------------------
+#Step to verify create strategy form input fields
+#------------------------------------------------
+Scenario:I verify create strategy form
+    And I scroll to top of page
+     And I click create strategy
+     And strategy form should be displayed
+     And I click strategy create button
+     And I verify strategy name is mandatory
+     And I verify strategy fund is mandatory
+
+@StepDef
+@DataTable(header="top")
+#######################################################
+#------------------------------------------------------
+#Step to Verify length of input fields on strategy form
+#Example:
+#  And I verify length of input fields
+#  | element  | text    |message   |
+#  | name     | abcde   |Message is|
+#------------------------------------------------------
+Scenario: I verify length of input fields for strategy
+    And I enter "${data[text]}" in strategy ${data[element]} input field for each data record
+    And On strategy form I verify length warning is ${data[message]} for ${data[element]} for each data record
+
+@StepDef
+############################################################
+#-----------------------------------------------------------
+#Step to Verify length of input fields on strategy form
+#Example:And I verify length warning is "message" for "name"
+#-----------------------------------------------------------
+Scenario: On strategy form I verify length warning is <message> for <inputField>
+    When strategy form should be displayed
+    Then exceeding character limit message for strategy $<inputField> should be "$<message>"
+
+@StepDef
+#################################################
+#------------------------------------------------
+#Verifies strategy page mandatory fields
+#Example: And I verify strategy name is mandatory
+#------------------------------------------------
+Scenario: I verify strategy <inputField> is mandatory
+    When strategy form should be displayed
+    Then strategy $<inputField> mandatory message should be "${strategy $<inputField> error message}"
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to click on strategy name present in strategy table
+#Example:And I navigate to strategy page of strategy "strategyABC"
+#-----------------------------------------------------------------
+Scenario: I navigate to strategy page of strategy "<strategyName>" to edit
+Given I wait for grid header text
+  And I scroll to top of page
+  And navigateTostrategyResult is defined by javascript
+  """
+  (function(){
+  a=[];result="";
+    function getData() {
+     $(' [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"] [ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid"]:nth-child(1)')
+      .each(function (index)
+        { if($(this).text().trim().indexOf("$<strategyName>") == 0 ) {
+            index++;
+            document.querySelector('[ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+index+') [ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid"]:nth-child(1)').click();
+            result = "Done";
+            a.push($(this).text())
+          }
+      })
+      if(a.length==0) {
+        $('#strategies-grid  [ng-click="pageNextPageClick()"]').get(0).click()
+        setTimeout(f,5000)
+        }
+      else {
+        result = "Done"
+      }
+    }
+    getData();
+    return result;
+  })();
+  """
+  And navigateTostrategyResult should be "Done"
+  And I wait 2 seconds
+  And I click strategy edit button
+
+@StepDef
+############################
+#---------------------------
+#Step to click cancel button
+#---------------------------
+Scenario:I click strategy cancel button
+ And I scroll to top of page
+  And I click strategy cancel button
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#verifies can not use already used fund to create new strategy
+#Example: And I verify can not use already used fund "HDFUSDAC2" to create new strategy
+#--------------------------------------------------------------------------------------
+Scenario: I verify can not use already used fund "<fundIs>" to create new strategy
+  When I click create strategy
+   #And I click fund selector
+   And result is defined by javascript
+   """
+   (function getResult(){
+     var result;var found=false;
+     $('#stl-multi-select-strategy-funds-edit > option').each(function(index)
+            { if($(this).text().trim().indexOf("$<fundIs>") < 0) {console.log("asda"+$(this).text().trim());result = "Done"} else { console.log("failed"+$(this).text().trim()); result = ""; return false}})
+     return result;
+   })()
+   """
+   And result should be "Done"
+   And I click strategy cancel button
+
+ @StepDef
+ ##############################################################
+ #-------------------------------------------------------------
+ #Step to extract strategy csv
+ #Example:And I extract strategy csv for "<testcaseNo>"
+ #-------------------------------------------------------------
+ Scenario: I extract strategy csv for "<testcaseNo>"
+   And I wait 2 seconds
+   And I wait for grid header text
+   And I execute javascript "$('#strategies-grid i:first').click()"
+   And I click export to csv
+   And I save file using "," as delimiter with sort on "none" for "$<testcaseNo>"
+   And I compare result for "$<testcaseNo>"
+   And testcaseIs is "$<testcaseNo>:''"
+   And I verify testresult of testcasesno "${testcaseNoIs}" for each testcaseNoIs in testcaseIs delimited by ":"
+
+
+ @StepDef
+ Scenario: I verify user can not view strategySection
+ And strategySectionPresent is defined by javascript "(function(){if ($('stl-strategy-form').length==0){return "true"}})()"
+ And strategySectionPresent should be "true"

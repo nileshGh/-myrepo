@@ -1,0 +1,598 @@
+@sweepsPage
+Feature: sweeps New Meta
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verifies current page is sweeps page. All Variables are defined inside config.meta file.
+#----------------------------------------------------------------------------------------
+Scenario:I go to the sweeps page
+Given I navigate to module sweepsPage
+  And heading should be "Sweep dashboard"
+  And smallmenubar should be displayed
+  And firstRowNotPresent is defined by javascript 
+  """
+    (function(){
+	    return($('[class*="ag-body-container"] [role="row"] [col-id="generatedDate"]').length==0);
+	  })()
+  """
+  And previousDate is defined by javascript
+    """
+      (function (){
+          var now = moment();
+		      var dt = new Date();
+		      var newDate = moment(dt, "DD/MM/YYYY");  
+			    now.set(newDate.toObject());
+			      currentDate = now.format("DD");
+				    currentMonth = now.format("MM");
+				    currentYear = now.format("YYYY");
+		        prevDate = parseInt(currentDate)-1;
+		      date = prevDate.toString()+"/"+currentMonth+"/"+currentYear;
+		      return date;
+      })()
+    """
+  And I set date "${previousDate}" on sweep dashboard if firstRowNotPresent
+  And I wait for first row of sweepsGrid
+  And headerfordate can be located by javascript "$('span.ag-header-cell-text:contains("Generated Date")').get(0)"
+  And I click headerfordate
+
+@StepDef
+###########################################
+#------------------------------------------
+#Step to verify current page is sweeps page
+#------------------------------------------
+Scenario: I am on the sweeps page
+  Given heading should be "Sweep dashboard"
+
+@StepDef
+##############################################################
+#-------------------------------------------------------------
+#Example:And I verify balances csv  for "<testcaseNo>"
+#-------------------------------------------------------------
+Scenario: I verify sweeps csv for "<testcaseNo>"
+  Given I am on the sweeps page
+    And I scroll to top of page
+    And I remove sweep filter for "Status:No Action"
+    And I remove column "#"
+    And I wait for first row of sweepsGrid
+    And I right click first row of sweepsGrid
+    And I wait for export button
+    And I click export button
+    And I wait for export to csv button
+    And export to csv button should be displayed
+    And export to excel button should be displayed
+    And dropdownList is defined by javascript "(function(){return $('.ag-menu').length})()"
+    And dropdownList should be "2"
+    And I click export to csv button
+    And I save file using "," as delimiter with sort on "none" for "$<testcaseNo>"
+    And I compare result for "$<testcaseNo>"
+    And testcaseIs is "$<testcaseNo>:''"
+    And I verify testresult of testcasesno "${testcaseNoIs}" for each testcaseNoIs in testcaseIs delimited by ":"
+
+
+
+
+    @StepDef
+    #-------------------------------------------------------------
+    #Step to apply sweep filter
+    #Example:And I apply sweep filter "Account:HDFAUDAC1"
+    #-------------------------------------------------------------
+    Scenario: I apply sweep filter "<filter>"
+        And filterIs is "$<filter>"
+        And I enter sweep filter "${selectFilter}" for each selectFilter in filterIs delimited by ";"
+        And I wait 3 seconds
+         And firstRowNotPresent is defined by javascript 
+          """
+            (function(){
+              return($('[class*="ag-body-container"] [role="row"] [col-id="generatedDate"]').length==0);
+            })()
+          """
+          And previousDate is defined by javascript
+            """
+              (function (){
+                  var now = moment();
+                  var dt = new Date();
+                  var newDate = moment(dt, "DD/MM/YYYY");  
+                  now.set(newDate.toObject());
+                    currentDate = now.format("DD");
+                    currentMonth = now.format("MM");
+                    currentYear = now.format("YYYY");
+                    prevDate = parseInt(currentDate)-1;
+                  date = prevDate.toString()+"/"+currentMonth+"/"+currentYear;
+                  return date;
+              })()
+            """
+          And I set date "${previousDate}" on sweep dashboard if firstRowNotPresent
+          And I wait for first row of sweepsGrid
+
+
+    @StepDef
+    #-----------------------------------------------------------------
+    #Step to enter filter name in sweep filter form
+    #Example:And I enter sweep filter "Amount:90989.898"
+    #-----------------------------------------------------------------
+    Scenario: I enter sweep filter "<filter>"
+        And I get filter details for "$<filter>"
+        And I scroll to sweep ladder column "${filterNameIs}"
+        And more option menu can be located by javascript
+          """
+            $('stl-sweep-grid span').filter(function() {
+                return $(this).text() === "${filterNameIs}";
+            }).parent().siblings().get(0);
+            """
+        And I click more option menu
+        And I wait for filter menu
+        And notOnFilterTab is defined by javascript "!$('[ref="tabHeader"] [class="ag-icon ag-icon-filter"]').parent().hasClass("ag-tab-selected")"
+        And I click filter menu if notOnFilterTab
+        And setPerspectiveFilterInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(0)"
+        And setPerspectiveFilterToInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(1)"
+        And NotDate filter is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" != "Value Date"})();"
+        And Date filter is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" == "Value Date"})();"
+        And I set filter for amount if NotDate filter is present
+        And I set filter for value date if Date filter is present
+        And I scroll to first column of sweep ladder
+        And I click sweepsPageHeader
+
+
+    @StepDef
+    #-----------------------------------------------
+    #Step for select filter checkbox from filter dialog
+    #Example:And I set sweep filter for cbfilter
+    #------------------------------------------------
+    Scenario: I set sweep filter for cbfilter
+      And allSelected is defined by javascript
+        """
+          (function() {
+            var result=false;
+            if($('#selectAll').get(0)!=null)
+              if($('#selectAll span').hasClass("ag-icon-checkbox-checked"))
+                result=true;
+            return result;
+          })()
+        """
+      ##WA##And I click filter menu select all checkbox if allSelected
+      And unselectAll is defined by javascript
+        """
+          (function() {
+            var result="";
+            if($('#selectAll').get(0)!=null){
+              $('#selectAll').click();
+              if(!($('#selectAll span').hasClass("ag-icon-checkbox-checked")))
+                result="Done";
+            }
+            return result;
+          })()
+        """
+      And unselectAll should be "Done"
+      And firstFilterValue is defined by javascript "(function(){ return "${filterValueIs}".replace(/[^a-zA-Z\d.-\d,][' ']/ig,"");})()" if perspectiveValue is present
+      And I type "${firstFilterValue}" in setPerspectiveFilterInputField if perspectiveValue is present
+      And I execute javascript "(function(){$('#richList span').each(function(){if($(this).text()==="${firstFilterValue}") {element=$(this).parent()}}) ;return element.click()})()"
+      And I scroll to the bottom of heading
+      And I click heading
+
+    @StepDef
+    #-----------------------------------------------
+    #Step for select filter from filter dialog
+    #Example:And I set sweep filter for Amount
+    #------------------------------------------------
+    Scenario: I set sweep filter for Amount
+      And I select "${filerCondition}" in filter condition selector if filerCondition is present
+      And I select "${filerCondition}" in filter condition selector if filerInRange is present
+      And firstFilterValue is defined by javascript "(function(){ return "${filterValueIs}".replace(/[^a-zA-Z\d.-][' ']/ig,"");})()" if filerCondition is present
+      And firstFilterValue is defined by javascript "(function(){ return "${filterValueIs}".split("<>")[0];})()" if filerInRange is present
+      And secondFilterValue is defined by javascript "(function(){ return "${filterValueIs}".split("<>")[1];})()" if filerInRange is present
+      And I type "${firstFilterValue}" in setPerspectiveFilterInputField if perspectiveValue is present
+      And I type "${secondFilterValue}" in setPerspectiveFilterToInputField if filerInRange is present
+
+    @StepDef
+    #-----------------------------------------------------------------
+    #Step to scroll to sweep ladder column
+    #Example: And I scroll to sweep ladder column "Trade Type"
+    #-----------------------------------------------------------------
+    Scenario: I scroll to sweep ladder column "<columnName>"
+      And I execute javascript "count=1;"
+      And scrolling is defined by javascript
+      """
+      (function(){
+      var result=""; var scrollDone="";var colId="";
+      function scrollSearch(){
+        scrollPos=$('stl-sweep-grid .ag-body-viewport').scrollLeft();
+        $('stl-sweep-grid .ag-body-viewport').scrollLeft(200*(count++));
+        console.log(scrollPos+"  "+count);
+      }
+      $('.ag-header-container .ag-header-cell span.ag-header-cell-text').filter(function()
+      {
+       if($(this).text().trim()=="$<columnName>")
+       {
+       $(this).parents().filter(function()
+         {
+         if($(this).attr('col-id')!=null)
+           {
+             colId=$(this).attr('col-id')
+           }
+         }
+       )}
+     })
+      if($('stl-sweep-grid [col-id*="'+colId+'"] span:contains("$<columnName>")').parent().siblings().get(0)==null){
+        console.log("in if");
+        scrollSearch();
+      }else{
+        console.log("in else");
+        result="Done";
+      }
+      return result;
+
+      })()
+      """
+      And scrolling should be "Done"
+
+
+    @StepDef
+    #-----------------------------------------------------------------
+    #Step to scroll to the first sweep ladder column
+    #Example: And I scroll to first column of sweep ladder
+    #-----------------------------------------------------------------
+    Scenario:I scroll to first column of sweep ladder
+    And I execute javascript
+      """
+      $('stl-sweep-grid .ag-body-viewport').scrollLeft(0);
+      """
+
+    @StepDef
+    #-------------------------------------------------------------
+    #Step to remove sweep filter
+    #Example:And I remove sweep filter "Account:HDFAUDAC1"
+    #-------------------------------------------------------------
+    Scenario:I remove sweep filter for "<filter>"
+      And filterIs is "$<filter>"
+      And I remove sweep filter "${selectFilter}" for each selectFilter in filterIs delimited by ";"
+
+    @StepDef
+    #-----------------------------------------------------------------
+    #Step to remove sweep filter
+    #Example: I remove sweep filter on sweep
+    #-----------------------------------------------------------------
+    Scenario: I remove sweep filter "<filter>"
+        And I get filter details for "$<filter>"
+        And I scroll to sweep ladder column "${filterNameIs}"
+        And more option menu can be located by javascript
+        """
+        $('stl-sweep-grid span').filter(function() {
+            return $(this).text() === "${filterNameIs}";
+        }).parent().siblings().get(0);
+        """
+        And I click more option menu
+        And I wait for filter menu
+        And notOnFilterTab is defined by javascript "!$('[class="ag-icon ag-icon-filter"]').parent().hasClass("ag-tab-selected")"
+        And I click filter menu if notOnFilterTab
+        And setPerspectiveFilterInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(0)"
+        And setPerspectiveFilterToInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(1)"
+        #And cbFilters is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" != "Value Date" && "${filterNameIs}" != "IDEL Pool Limit"})();"
+        #And Amount filter is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" == "IDEL Pool Limit"})();"
+        #And I unset sweep filter for cbfilter if cbFilters is present
+        #And I unset sweep filter for amount if Amount filter is present
+        And I unset sweep filter for amount
+        And I scroll to first column of sweep ladder
+        And I click sweepsPageHeader
+
+    @StepDef
+    #----------------------------------------------
+    #Step to deselect selected filter from filter dialog box
+    #Example:And I unset sweep filter for cbfilter
+    #-----------------------------------------------
+    Scenario: I unset sweep filter for cbfilter
+        And I clear setPerspectiveFilterInputField if perspectiveValue is present
+        And I type "a" in setPerspectiveFilterInputField if perspectiveValue is present
+        And I wait 3 seconds if perspectiveValue is present
+        And I send "BACK_SPACE" to setPerspectiveFilterInputField if perspectiveValue is present
+        And allUnselected is defined by javascript
+        """
+          (function() {
+            var result=true;
+            if($('#selectAll').get(0)!=null)
+              if($('#selectAll span').hasClass("ag-icon-checkbox-checked"))
+                result=false;
+            return result;
+          })()
+        """
+        ##WA##And I click filter menu select all checkbox if allUnselected
+        And selectAll is defined by javascript
+          """
+            (function() {
+              var result="";
+              if($('#selectAll').get(0)!=null){
+                $('#selectAll').click();
+                if($('#selectAll span').hasClass("ag-icon-checkbox-checked"))
+                  result="Done";
+              }
+              return result;
+            })()
+          """
+        And selectAll should be "Done"
+
+
+    @StepDef
+    #----------------------------------------------
+    #Step to deselect selected filter of amount from filter dialog box
+    #Example:And I unset sweep filter for amount
+    #-----------------------------------------------
+    Scenario: I unset sweep filter for amount
+        And I clear setPerspectiveFilterInputField if perspectiveValue is present
+        And I type "a" in setPerspectiveFilterInputField if perspectiveValue is present
+        And I wait 3 seconds if perspectiveValue is present
+        And I send "BACK_SPACE" to setPerspectiveFilterInputField if perspectiveValue is present
+        And I clear setPerspectiveFilterToInputField if filerInRange is present
+        And I type "a" in setPerspectiveFilterToInputField if filerInRange is present
+        And I wait 3 seconds if filerInRange is present
+        And I send "BACK_SPACE" to setPerspectiveFilterToInputField if filerInRange is present
+
+  @StepDef
+  #######################################################################################
+  #--------------------------------------------------------------------------------------
+  #sort ascending
+  #--------------------------------------------------------------------------------------
+  Scenario: I sort ascending sweep columns "<columnName>"
+     And columnName is "$<columnName>"
+     And multipleGrouping is defined by javascript "(function() {return "${columnName}".indexOf(',')>0})();"
+     And I execute javascript "priorityCount=0"
+     And I perform sort ascending action on sweep page "${columnNameTo}" for each columnNameTo in columnName delimited by ","
+     And I verify priority count of sweep column "${columnNameTo}" for each columnNameTo in columnName delimited by "," if multipleGrouping
+
+ @StepDef
+ #######################################################################################
+ #--------------------------------------------------------------------------------------
+ #verify priority count
+ #--------------------------------------------------------------------------------------
+ Scenario: I verify priority count of sweep column "<columnName>"
+   And counter is defined by javascript "(function() {return ++priorityCount})()" if multipleGrouping
+   And I scroll to sweep column "$<columnName>"
+   And priorityCounter can be located by javascript "$('[col-id="$<columnName>"] span.ag-header-cell-text').parent().find('[ref="eSortOrder"]').get(0)"
+   And priorityCounter should be "${counter}" if multipleGrouping
+   And I scroll to first column of sweep ladder
+
+  @StepDef
+  Scenario: I perform sort ascending action on sweep page "<perspective>"
+    And I scroll to sweep column "$<perspective>"
+    And unsorted is defined by javascript "$('[col-id="$<perspective>"] span').siblings('[ref="eSortAsc"]').hasClass( "ag-hidden")"
+    And sortOption can be located by javascript "$('[col-id="$<perspective>"] span.ag-header-cell-text').get(0)"
+    And I SHIFT click sortOption while unsorted using 1 second delay
+    And I scroll to first column of sweep ladder
+
+  @StepDef
+  ##################################################################
+  #-----------------------------------------------------------------
+  #Step to scroll to ladder column
+  #Before executing this directly it is mandate to execute And I get column id for "30/09/2017 Projected Balance - STANDARD"
+  #Example: And I scroll to sweep column "30/09/2017 Projected Balance - STANDARD"
+  #-----------------------------------------------------------------
+  Scenario: I scroll to sweep column "<columnName>"
+    And I execute javascript "count=1;"
+    And scrolling is defined by javascript
+    """
+    (function(){
+    	var result=""; var scrollDone="";
+    	function scrollSearch(){
+    		scrollPos=$('stl-sweep-grid .ag-body-viewport').scrollLeft();
+    		$('stl-sweep-grid .ag-body-viewport').scrollLeft(550*(count++));
+    		console.log(scrollPos+"  "+count);
+    	}
+    	if($('stl-sweep-grid [col-id*="$<columnName>"] span[class="ag-icon ag-icon-menu"]').get(0)==null){
+    		console.log("in if");
+    		scrollSearch();
+    	}else{
+    		console.log("in else");
+    		result="Done";
+    	}
+    	return result;
+
+    })()
+    """
+    And scrolling should be "Done"
+
+    @StepDef
+@DataTable(header="top")
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify remove columns from payment grid
+#Example:
+#And I remove columns from sweep grid
+  #|columnName|
+  #|Type|
+  #|Legal Entity|
+#----------------------------------------------------------------------------------------------------------
+Scenario: I remove columns from sweep grid
+  And arrangeColumnPanelClosed is defined by javascript "(function(){return $('stl-sweep-grid .ag-column-panel').is(":visible")!=true})()"
+  And I click columnButton if arrangeColumnPanelClosed
+  And I remove column "${data[columnName]}" for each data record
+
+
+ @StepDef
+ #######################################################
+ #------------------------------------------------------
+ #Step to remove columns
+ #Example:And I remove column "Type"
+ #------------------------------------------------------
+ Scenario: I remove column "<columnName>"
+   And arrangeColumnPanelClosed is defined by javascript "(function(){return $('stl-sweep-grid .ag-column-panel').is(":visible")!=true})()"
+   And I click columnButton if arrangeColumnPanelClosed
+   And I wait 2 seconds if arrangeColumnPanelClosed
+  And columnSelector can be located by javascript "$('stl-sweep-grid .ag-column-select-panel span').filter(function() { return $(this).text() === "$<columnName>"})"
+  And I click columnSelector
+
+@StepDef
+@DataTable(header="top")
+#######################################################
+#------------------------------------------------------
+#Step to submit to cancel sweep using data DataTable
+#Example:I submit to cancel sweep "1" with reason "Cancelling Fund5 sweep by automation"
+#------------------------------------------------------
+Scenario: I submit to cancel sweep "<count>" with reason "<reason>"
+    And I navigate to home page
+    And I go to the sweeps page
+    And sweepcounter is defined by javascript "(function() { return 0})()"
+    And I select sweep having Value Date "${data[valueDate]}" From Account Code "${data[fromAccountCode]}" To account code "${data[toaccountCode]}" from amount "${data[fromamount]}" on sweep page for each data record
+    And submitForCancelButton can be located by javascript "$('button:contains("Submit for cancellation ($<count>)"):visible')"
+    And I click submitForCancelButton
+    And I click sweepSaveButton
+    And sweepformErrorMsg should be "Reason for cancellation cannot be empty or greater than 255 characters."
+    And I type "$<reason>" in reasonForCancellation
+    And I click sweepSaveButton
+    And notificationHeader should be "Submit for cancellation"
+    And notificationMsg should be "Submitted for cancellation $<count> sweeps. This may take a few seconds. Please update the grid for progress"
+    And I click notificationMsg
+
+@StepDef
+@DataTable(header="top")
+#######################################################
+#------------------------------------------------------
+#Step to approve cancel sweep using data DataTable
+#Example:I cancel "1" sweep 
+#------------------------------------------------------
+Scenario: I approve cancel "<count>" sweep
+    And I navigate to home page
+    And I go to the sweeps page
+    And sweepcounter is defined by javascript "(function() { return 0})()"
+    And I select sweep having Value Date "${data[valueDate]}" From Account Code "${data[fromAccountCode]}" To account code "${data[toaccountCode]}" from amount "${data[fromamount]}" on sweep page for each data record
+    And approveCancellationButton can be located by javascript "$('button:contains("Approve cancellation ($<count>)"):visible')"
+    And I click approveCancellationButton
+    And notificationHeader should be "Cancellation"
+    And notificationMsg should be "Cancelled $<count> sweeps. This may take a few seconds. Please update the grid for progress"
+    And I click notificationMsg
+
+@StepDef
+@DataTable(header="top")
+#######################################################
+#------------------------------------------------------
+#Step to reject cancel sweep using data DataTable
+#Example:I reject cancellation of "1" sweep with reason "Rejecting FUND5 sweep cancellation by automation"
+
+#------------------------------------------------------
+Scenario: I reject cancellation of "<count>" sweep with reason "<reason>"
+    And I navigate to home page
+    And I go to the sweeps page
+    And sweepcounter is defined by javascript "(function() { return 0})()"
+    And I select sweep having Value Date "${data[valueDate]}" From Account Code "${data[fromAccountCode]}" To account code "${data[toaccountCode]}" from amount "${data[fromamount]}" on sweep page for each data record
+    And rejectFromCancellationButton can be located by javascript "$('button:contains("Reject from cancellation ($<count>)"):visible')"
+    And I click rejectFromCancellationButton
+    And I click sweepSaveButton
+    And sweepformErrorMsg should be "Reason for cancellation cannot be empty or greater than 255 characters."
+    And I type "$<reason>" in reasonForCancellation
+    And I click sweepSaveButton
+    And notificationHeader should be "Reject from cancellation"
+    And notificationMsg should be "Rejected from cancellation $<count> sweeps. This may take a few seconds. Please update the grid for progress"
+    And I click notificationMsg
+
+  @StepDef
+  #######################################################
+  #------------------------------------------------------
+  #Step to select sweep with value date column
+  #------------------------------------------------------
+  Scenario:I select sweep having Value Date "<valuedate>" From Account Code "<fromaccountCode>" To account code "<toaccountCode>" from amount "<fromamount>" on sweep page
+    And filterOnValueDate is defined by javascript "(function() {return "$<valuedate>" != "''"})();"
+    And notapplyfilterOnValueDate is defined by javascript "(function() {return "$<valuedate>" == "''"})();"
+    And I apply sweep filter "From Account Code:$<fromaccountCode>;To Account Code:$<toaccountCode>;From Amount:$<fromamount>" if notapplyfilterOnValueDate
+    And I apply sweep filter "Value Date:$<valuedate>;From Account Code:$<fromaccountCode>;To Account Code:$<toaccountCode>;From Amount:$<fromamount>" if filterOnValueDate
+    And sweepcounter is defined by javascript "(function() {  a = parseInt(${sweepcounter});return ++a})()"
+    And I wait for first row of sweepsGrid
+    And I click first row of sweepsGrid
+    And I remove sweep filter for "From Account Code:$<fromaccountCode>;To Account Code:$<toaccountCode>;From Amount:$<fromamount>" if notapplyfilterOnValueDate
+    And I remove sweep filter for "Value Date:$<valuedate>;From Account Code:$<fromaccountCode>;To Account Code:$<toaccountCode>;From Amount:$<fromamount>" if filterOnValueDate
+
+@StepDef
+@DataTable(header="top")
+#######################################################
+#------------------------------------------------------
+#Step to select sweep with status column
+#Example:I select sweep on sweep page
+# | fromAccountCode | toaccountCode | fromamount | status    |
+# | FND9JPYP1       | FND9USDM      | 9033.12    | Cancelled |
+# | FND9AEDP1       | FND9AEDC2     | 6284750.2  | Cancelled |
+#------------------------------------------------------
+Scenario:I select sweep on sweep page
+    And I select sweep having status "${data[status]}" From Account Code "${data[fromAccountCode]}" To account code "${data[toaccountCode]}" from amount "${data[fromamount]}" on sweep page for each data record
+
+@StepDef
+#######################################################
+#------------------------------------------------------
+#Step to select sweep with status column
+#------------------------------------------------------
+Scenario:I select sweep having status "<status>" From Account Code "<fromaccountCode>" To account code "<toaccountCode>" from amount "<fromamount>" on sweep page
+  And I apply sweep filter "Status:$<status>;From Account Code:$<fromaccountCode>;To Account Code:$<toaccountCode>;From Amount:$<fromamount>" 
+  And I wait for first row of sweepsGrid
+  And I click first row of sweepsGrid
+  And I remove sweep filter for "Status:$<status>;From Account Code:$<fromaccountCode>;To Account Code:$<toaccountCode>;From Amount:$<fromamount>"
+
+@StepDef
+#######################################################
+#------------------------------------------------------
+#Step to verify button on sweep dashboard is disabled
+#------------------------------------------------------
+Scenario:I verify "<button>" button on sweep dashboard is "<status>"
+  And sweepDashboardButton can be located by javascript "$('button:contains($<button>):visible')"
+  And sweepDashboardButton should be $<status>
+
+@StepDef
+@DataTable(header="top")
+Scenario: I verify can not cancel <aborted> sweep
+    And sweepcounter is defined by javascript "(function() { return 0})()"
+    And I select sweep having Value Date "${data[valueDate]}" From Account Code "${data[fromAccountCode]}" To account code "${data[toaccountCode]}" from amount "${data[fromamount]}" on sweep page for each data record
+    And cancelButton should be disabled
+
+
+  @StepDef
+@DataTable(header="top")
+Scenario: I verify can not cancel projected sweep when any aborted sweep is selected
+    And sweepcounter is defined by javascript "(function() { return 0})()"
+    And I select sweep having Value Date "${data[valueDate]}" From Account Code "${data[fromAccountCode]}" To account code "${data[toaccountCode]}" from amount "${data[fromamount]}" on sweep page for each data record
+    And cancelButton should be disabled
+
+  
+@StepDef
+@DataTable(header="top")
+Scenario: I verify can not cancel already cancelled sweep
+    And sweepcounter is defined by javascript "(function() { return 0})()"
+    And I select sweep having Value Date "${data[valueDate]}" From Account Code "${data[fromAccountCode]}" To account code "${data[toaccountCode]}" from amount "${data[fromamount]}" on sweep page for each data record
+    And cancelButton should be disabled
+
+@StepDef
+@DataTable(header="top")
+Scenario: I verify sweep not gets cancelled on selecting No option on reasoning form
+    And sweepcounter is defined by javascript "(function() { return 0})()"
+    And I select sweep having Value Date "${data[valueDate]}" From Account Code "${data[fromAccountCode]}" To account code "${data[toaccountCode]}" from amount "${data[fromamount]}" on sweep page for each data record
+    And I click submitForCancelBtn
+    And I click cancelButton
+    And I wait until "(function(){return $('button:contains("Cancel"):visible')!=true })()"
+
+
+ @StepDef
+ @DataTable(header="top")
+ #-------------------------------------------------------------
+ #Step to apply sweep filter
+ #-------------------------------------------------------------
+ Scenario: I apply filter on sweep
+     And I enter sweep filter "${data[filterWith]}" for each data record
+
+
+@StepDef
+##############################################################
+#-------------------------------------------------------------
+#Example:And I verify balances csv  for "<testcaseNo>"
+#-------------------------------------------------------------
+Scenario: I verify default sweeps csv for "<testcaseNo>"
+  Given I am on the sweeps page
+    And I scroll to top of page
+    And I remove column "#"
+    And I wait for first row of sweepsGrid
+    And I right click first row of sweepsGrid
+    And I wait for export button
+    And I click export button
+    And I wait for export to csv button
+    And export to csv button should be displayed
+    And export to excel button should be displayed
+    And dropdownList is defined by javascript "(function(){return $('.ag-menu').length})()"
+    And dropdownList should be "2"
+    And I click export to csv button
+    And I save file using "," as delimiter with sort on "none" for "$<testcaseNo>"
+    And I compare result for "$<testcaseNo>"
+    And testcaseIs is "$<testcaseNo>:''"
+    And I verify testresult of testcasesno "${testcaseNoIs}" for each testcaseNoIs in testcaseIs delimited by ":"

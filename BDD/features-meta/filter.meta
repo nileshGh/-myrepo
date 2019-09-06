@@ -1,0 +1,826 @@
+@filter
+Feature: Filter new meta
+
+@StepDef
+@DataTable(header="top")
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Sets filter
+#--------------------------------------------------------------------------------------
+Scenario: I apply filter and verify result
+ And I set filter "${data[setPerspective]}" "${data[filter]}" "${data[testcaseNo]}" "${data[setDate]}" for each data record
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Sets filter
+#--------------------------------------------------------------------------------------
+Scenario:I set filter "<setPerspective>" "<filter>" "<testcaseNo>" "<setDate>"
+  And setPerspective is "$<setPerspective>"
+  And Value is present is defined by javascript "(function() {return "$<setPerspective>" != "${selectedPerspective}"})();"
+  And setDate is "$<setDate>"
+  And I select perspective "$<setPerspective>" if Value is present
+  And I set balanceType "${balanceType}" if Value is present
+  And filterIs is "$<filter>"
+  And I wait 5 seconds
+  And I enter ladder filter "${selectFilter}" for each selectFilter in filterIs delimited by ";"
+  And I verify balances csv for "$<testcaseNo>"
+  And I scroll to top of page
+  And I remove ladder filter "${selectFilter}" for each selectFilter in filterIs delimited by ";"
+  And testcaseIs is "$<testcaseNo>:''"
+  And I verify testresult of testcases "${testcaseNoIs}" for each testcaseNoIs in testcaseIs delimited by ":"
+
+@StepDef
+Scenario: I verify testresult of testcases "<testcaseNoIs>"
+ And value is present is defined by javascript "(function() {return "$<testcaseNoIs>" != "''"})();"
+ And I compare result if value is present
+ And my gwen.web.wait.seconds property is "${maxWaitingTimeInSec}"
+
+@StepDef
+Scenario:I compare result
+  And verifyResult is defined by javascript "(function() {return "${verifyLater}"=="true"})()"
+  And my gwen.web.wait.seconds property is "${minimumWaitingTimeInSec}"
+  Then compareResult should match regex ".*,"?[pP][aA][sS][sS]["],.*" if verifyResult
+  And my gwen.web.wait.seconds property is "${maxWaitingTimeInSec}"
+
+
+@StepDef
+@DataTable(header="top")
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Sets filter
+#--------------------------------------------------------------------------------------
+Scenario: I apply filter on transaction and verify result
+  And I set transaction filter "${data[filter]}" "${data[testcaseNo]}" for each data record
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to create csv and compare actual result with expected result
+#Example: I apply transaction filter on transaction and verify result
+#-----------------------------------------------------------------
+Scenario: I set transaction filter "<filter>" "<testcaseNo>"
+  And filterIs is "$<filter>"
+  And I enter transaction filter "${selectFilter}" for each selectFilter in filterIs delimited by ";"
+  And I extract transaction csv for "$<testcaseNo>"
+  And I scroll to top of page
+  And I remove transaction filter "${selectFilter}" for each selectFilter in filterIs delimited by ";"
+  And testcaseIs is "$<testcaseNo>:''"
+  And I verify testresult of testcases "${testcaseNoIs}" for each testcaseNoIs in testcaseIs delimited by ":"
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to get filtering details in variables
+#Example:And I get filter details for "Account:HDFAUDAC1"
+#-----------------------------------------------------------------
+Scenario: I get filter details for "<filter>"
+    And applyFilter is "$<filter>"
+    And filterName is defined by javascript
+    """
+    (function getFilterName() {
+      arrayIs = "${applyFilter}".split(':');
+      return arrayIs[0];
+    })()
+    """
+    And filterNameIs is "${filterName}"
+    And definedValue is defined by javascript
+    """
+    (function getFilterName() {
+      arrayIs = "${applyFilter}".split(':');
+      return arrayIs[1];
+    })()
+    """
+    And filterValueIs is "${definedValue}"
+    And filerCondition is defined by javascript
+    """
+    (function(){
+      var result="";
+      var operation="${filterValueIs}".replace(/[0-9a-zA-Z_,]/ig,"").replace(/[-]/ig,"").replace(/[.]/ig,"").replace(/[' ']/ig,"");
+      if(operation==""){
+        result="Equals";
+      }else if(operation=="="){
+          result="Equals";
+      }else if(operation=="!="){
+        result="Not equal";
+      }else if(operation=="<"){
+        result="Less than";
+      }else if(operation=="<="){
+        result="Less than or equals";
+      }else if(operation==">"){
+        result="Greater than";
+      }else if(operation==">="){
+        result="Greater than or equals";
+      }else if(operation=="<>"){
+        result="In range";
+      }else if(operation=="/*"){
+        result="Starts with";
+      }else if(operation=="*/"){
+        result="Ends with";
+      }else if(operation=="**"){
+        result="Contains";
+      }else if(operation=="!!"){
+        result="Not contains";
+      }
+      return result;
+    })()
+    """
+    And filerCondition is present is defined by javascript "(function() {return "${filerCondition}"!= "" && "${filerCondition}"!= "In range"})()"
+    And filerInRange is present is defined by javascript "(function() {return "${filerCondition}"== "In range"})()"
+    And date is present is defined by javascript "(function() {return "${filterNameIs}".split("/").length >2})()"
+    And I get column id for "${filterNameIs}" if date is present
+    And filterNameIs is "${columnId}" if date is present
+    And perspectiveValue is present is defined by javascript "(function() {return "${filterNameIs}" != "''"})();"
+
+@StepDef
+##############################################################
+#-------------------------------------------------------------
+#Step to apply ladder filter
+#Example:And I apply ladder filter "Account:HDFAUDAC1"
+#-------------------------------------------------------------
+Scenario: I apply ladder filter "<filter>"
+    And I scroll to top of page
+    And filterIs is "$<filter>"
+    And I enter ladder filter "${selectFilter}" for each selectFilter in filterIs delimited by ";"
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to  apply ladder filter
+#Example:And I enter ladder filter "Account:HDFAUDAC1"
+#-----------------------------------------------------------------
+Scenario: I enter ladder filter "<filter>"
+  And I scroll to the bottom of perspective selector
+  And I get filter details for "$<filter>"
+  And I scroll to ladder column "${filterNameIs}" if date is present
+  ##WA##And more options button can be located by javascript "$('stl-ladder-grid [col-id*="${filterNameIs}"] span[class="ag-icon ag-icon-menu"]').get(0)"
+  ##WA##And I click more options button
+  And I execute javascript "$('stl-ladder-grid [col-id*="${filterNameIs}"] span[class="ag-icon ag-icon-menu"]').get(0).click()"
+  And I wait for filter menu
+  And notOnFilterTab is defined by javascript "!$('[ref="tabHeader"] [class="ag-icon ag-icon-filter"]').parent().hasClass("ag-tab-selected")"
+  And I click filter menu if notOnFilterTab
+  And I select "${filerCondition}" in filter condition selector if filerCondition is present
+  And I select "${filerCondition}" in filter condition selector if filerInRange is present
+  And setPerspectiveFilterInputField can be located by id "filterText"
+  And setPerspectiveFilterToInputField can be located by id "filterToText"
+  And firstFilterValue is defined by javascript "(function(){ return "${filterValueIs}".replace(/[^a-zA-Z\d-.' ']/ig,"");})()" if filerCondition is present
+  And firstFilterValue is defined by javascript "(function(){ return "${filterValueIs}".split("<>")[0];})()" if filerInRange is present
+  And secondFilterValue is defined by javascript "(function(){ return "${filterValueIs}".split("<>")[1];})()" if filerInRange is present
+  And I type "${firstFilterValue}" in setPerspectiveFilterInputField if perspectiveValue is present
+  And I type "${secondFilterValue}" in setPerspectiveFilterToInputField if filerInRange is present
+  And I scroll to first column of ladder if date is present
+  And I scroll to the bottom of perspective selector
+  And I click heading
+
+
+@StepDef
+##############################################################
+#-------------------------------------------------------------
+#Step to remove ladder filter
+#Example:And I remove ladder filter "Account:HDFAUDAC1"
+#-------------------------------------------------------------
+Scenario:I remove ladder filter for "<filter>"
+    And filterIs is "$<filter>"
+    And I remove ladder filter "${selectFilter}" for each selectFilter in filterIs delimited by ";"
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to remove ladder filter
+#Example:And I remove ladder filter "Fund:HDF"
+#-----------------------------------------------------------------
+Scenario: I remove ladder filter "<filter>"
+  And I scroll to top of page
+  And I scroll to the bottom of perspective selector
+  And I get filter details for "$<filter>"
+  And I scroll to ladder column "${filterNameIs}" if date is present
+  And I execute javascript "$('stl-ladder-grid [col-id*="${filterNameIs}"] span[class="ag-icon ag-icon-menu"]').get(0).click()"
+  And I wait for filter menu
+  And notOnFilterTab is defined by javascript "!$('[ref="tabHeader"] [class="ag-icon ag-icon-filter"]').parent().hasClass("ag-tab-selected")"
+  And I click filter menu if notOnFilterTab
+  And setPerspectiveFilterInputField can be located by id "filterText"
+  And setPerspectiveFilterToInputField can be located by id "filterToText"
+  And I clear setPerspectiveFilterInputField if perspectiveValue is present
+  And I type "a" in setPerspectiveFilterInputField if perspectiveValue is present
+  And I wait 3 seconds if perspectiveValue is present
+  And I send "BACK_SPACE" to setPerspectiveFilterInputField if perspectiveValue is present
+  And I clear setPerspectiveFilterToInputField if filerInRange is present
+  And I type "a" in setPerspectiveFilterToInputField if filerInRange is present
+  And I wait 3 seconds if filerInRange is present
+  And I send "BACK_SPACE" to setPerspectiveFilterToInputField if filerInRange is present
+  And I scroll to first column of ladder if date is present
+  And I scroll to the bottom of perspective selector
+  And I click heading
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#sort ascending
+#--------------------------------------------------------------------------------------
+Scenario: I sort ascending "<columnName>"
+   And columnName is "$<columnName>"
+   And multipleGrouping is defined by javascript "(function() {return "${columnName}".indexOf(',')>0})();"
+   And I execute javascript "priorityCount=0"
+   And I perform sort ascending action on "${columnNameTo}" for each columnNameTo in columnName delimited by ","
+   And I verify priority count of "${columnNameTo}" for each columnNameTo in columnName delimited by "," if multipleGrouping
+
+
+@StepDef
+Scenario: I perform sort ascending action on "<perspective>"
+  And isLoadTime is defined by javascript "(function() {return "$<perspective>"=="Load Time"})()"
+  And I scroll to transaction ladder column "$<perspective>" if isLoadTime
+  And unsorted is defined by javascript "$('span:contains("$<perspective>")').siblings('[ref="eSortAsc"]').hasClass( "ag-hidden")"
+  And sortOption can be located by javascript "$('span:contains("$<perspective>").ag-header-cell-text').get(0)"
+  And I SHIFT click sortOption while unsorted using 1 second delay
+  And I scroll to first column of transaction ladder
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#sort descending
+#--------------------------------------------------------------------------------------
+Scenario: I sort descending "<columnName>"
+  And columnName is "$<columnName>"
+  And multipleGrouping is defined by javascript "(function() {return "${columnName}".indexOf(',')>0})();"
+  And I execute javascript "priorityCount=0"
+  And I perform sort descending action on "${columnNameTo}" for each columnNameTo in columnName delimited by ","
+  And I verify priority count of "${columnNameTo}" for each columnNameTo in columnName delimited by "," if multipleGrouping
+
+@StepDef
+Scenario: I perform sort descending action on "<perspective>"
+  And isLoadTime is defined by javascript "(function() {return "$<perspective>"=="Load Time"})()"
+  And I scroll to transaction ladder column "$<perspective>" if isLoadTime
+  And unsorted is defined by javascript "$('span:contains("$<perspective>")').siblings('[ref="eSortDesc"]').hasClass( "ag-hidden")"
+  And sortDescOption can be located by javascript "$('span:contains("$<perspective>").ag-header-cell-text').get(0)"
+  And I SHIFT click sortDescOption while unsorted using 1 second delay
+  And I scroll to first column of transaction ladder
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Sets grouping
+#--------------------------------------------------------------------------------------
+Scenario: I remove sort on "<columnName>"
+  And columnName is "$<columnName>"
+  And multipleGrouping is defined by javascript "(function() {return "${columnName}".indexOf(',')>0})();"
+  And I perform remove sort action on "${columnNameTo}" for each columnNameTo in columnName delimited by ","
+
+@StepDef
+Scenario: I perform remove sort action on "<perspective>"
+  And isLoadTime is defined by javascript "(function() {return "$<perspective>"=="Load Time"})()"
+  And I scroll to transaction ladder column "$<perspective>" if isLoadTime
+  And sorted is defined by javascript "!($('span:contains("$<perspective>")').siblings('[ref="eSortDesc"]').hasClass( "ag-hidden") && $('span:contains("$<perspective>")').siblings('[ref="eSortAsc"]').hasClass( "ag-hidden"))"
+  And sortRemoveOption can be located by javascript "$('span:contains("$<perspective>").ag-header-cell-text').get(0)"
+  And I SHIFT click sortRemoveOption while sorted using 1 second delay
+  And I scroll to first column of transaction ladder
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#verify priority count
+#--------------------------------------------------------------------------------------
+Scenario: I verify priority count of "<columnName>"
+  And counter is defined by javascript "(function() {return ++priorityCount})()" if multipleGrouping
+  And priorityCounter can be located by javascript "$('span:contains("$<columnName>").ag-header-cell-text').parent().find('[ref="eSortOrder"]').get(0)"
+  And priorityCounter should be "${counter}" if multipleGrouping
+
+
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to apply transaction filter
+#Example:And I enter transaction filter "Amount:90989.898"
+#-----------------------------------------------------------------
+Scenario: I enter transaction filter "<filter>"
+  And I get filter details for "$<filter>"
+  And I scroll to transaction ladder column "${filterNameIs}"
+  And more option menu can be located by javascript
+    """
+    $('stl-ladder-transaction-grid span').filter(function() {
+        return $(this).text() === "${filterNameIs}";
+    }).parent().siblings().get(0);
+    """
+  And I click more option menu
+  And I wait for filter menu
+  And notOnFilterTab is defined by javascript "!$('[ref="tabHeader"] [class="ag-icon ag-icon-filter"]').parent().hasClass("ag-tab-selected")"
+  And I click filter menu if notOnFilterTab
+  And setPerspectiveFilterInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(0)"
+  And setPerspectiveFilterToInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(1)"
+  And cbFilters is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" != "Value Date" && "${filterNameIs}" != "Amount"})();"
+  And Amount filter is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" == "Amount"})();"
+  And Date filter is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" == "Value Date"})();"
+  And I set filter for cbfilter if cbFilters is present
+  And I set filter for amount if Amount filter is present
+  And I set filter for value date if Date filter is present
+  And I scroll to first column of transaction ladder
+  And I click transactionGridHeader
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to apply filter for checkbox
+#Example:And I set filter for cbfilter
+#-----------------------------------------------------------------
+Scenario: I set filter for cbfilter
+  And allSelected is defined by javascript
+    """
+      (function() {
+        var result=false;
+        if($('#selectAll').get(0)!=null)
+          if($('#selectAll span').hasClass("ag-icon-checkbox-checked"))
+            result=true;
+        return result;
+      })()
+    """
+  ##WA##And I click filter menu select all checkbox if allSelected
+  And unselectAll is defined by javascript
+    """
+      (function() {
+        var result="";
+        if($('#selectAll').get(0)!=null){
+          $('#selectAll').click();
+          if(!($('#selectAll span').hasClass("ag-icon-checkbox-checked")))
+            result="Done";
+        }
+        return result;
+      })()
+    """
+  And unselectAll should be "Done"
+  And firstFilterValue is defined by javascript "(function(){ return "${filterValueIs}".replace(/[^a-zA-Z\d-.' ']/ig,"");})()" if filerCondition is present
+  And I type "${firstFilterValue}" in setPerspectiveFilterInputField if perspectiveValue is present
+  And filterCheckbox can be located by javascript "$('#richList span:contains("${firstFilterValue}")').parent()"
+  And I click filterCheckbox
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to apply filter amount type
+#Example:And I set filter for amount
+#-----------------------------------------------------------------
+Scenario: I set filter for amount
+  And I select "${filerCondition}" in filter condition selector if filerCondition is present
+  And I select "${filerCondition}" in filter condition selector if filerInRange is present
+  And firstFilterValue is defined by javascript "(function(){ return "${filterValueIs}".replace(/[^a-zA-Z\d-.' '_,]/ig,"");})()" if filerCondition is present
+  And firstFilterValue is defined by javascript "(function(){ return "${filterValueIs}".split("<>")[0];})()" if filerInRange is present
+  And secondFilterValue is defined by javascript "(function(){ return "${filterValueIs}".split("<>")[1];})()" if filerInRange is present
+  And I type "${firstFilterValue}" in setPerspectiveFilterInputField if perspectiveValue is present
+  And I type "${secondFilterValue}" in setPerspectiveFilterToInputField if filerInRange is present
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to apply filter date type
+#Example:And I set filter for value date
+#-----------------------------------------------------------------
+Scenario:I set filter for value date
+  And dayFrom is defined by javascript "(function(){ return "${filterValueIs}".replace(/[^a-zA-Z/\d-.' ']/ig,"").split("/")[0];})()" if filerCondition is present
+  And monthFrom is defined by javascript "(function(){ return "${filterValueIs}".replace(/[^a-zA-Z/\d-.' ']/ig,"").split("/")[1];})()" if filerCondition is present
+  And yearFrom is defined by javascript "(function(){ return "${filterValueIs}".replace(/[^a-zA-Z/\d-.' ']/ig,"").split("/")[2];})()" if filerCondition is present
+  And firstFilterValue is defined by javascript "(function(){ return "${filterValueIs}".replace(/[^a-zA-Z/\d-.' ']/ig,"").split("<>")[0];})()" if filerInRange is present
+  And secondFilterValue is defined by javascript "(function(){ return "${filterValueIs}".replace(/[^a-zA-Z/\d-.' ']/ig,"").split("<>")[1];})()" if filerInRange is present
+  And dayFrom is defined by javascript "(function(){ return "${firstFilterValue}".replace(/[^a-zA-Z/\d-.' ']/ig,"").split("/")[0];})()" if filerInRange is present
+  And monthFrom is defined by javascript "(function(){ return "${firstFilterValue}".replace(/[^a-zA-Z/\d-.' ']/ig,"").split("/")[1];})()" if filerInRange is present
+  And yearFrom is defined by javascript "(function(){ return "${firstFilterValue}".replace(/[^a-zA-Z/\d-.' ']/ig,"").split("/")[2];})()" if filerInRange is present
+  And dayTo is defined by javascript "(function(){ return "${secondFilterValue}".replace(/[^a-zA-Z/\d-.' ']/ig,"").split("/")[0];})()" if filerInRange is present
+  And monthTo is defined by javascript "(function(){ return "${secondFilterValue}".replace(/[^a-zA-Z/\d-.' ']/ig,"").split("/")[1];})()" if filerInRange is present
+  And yearTo is defined by javascript "(function(){ return "${secondFilterValue}".replace(/[^a-zA-Z/\d-.' ']/ig,"").split("/")[2];})()" if filerInRange is present
+  And I set date in from date as "${dayFrom}" "${monthFrom}" "${yearFrom}"
+  And I set date in to date as "${dayTo}" "${monthTo}" "${yearTo}" if filerInRange is present
+  And I select "${filerCondition}" in filter condition selector if filerCondition is present
+  And I select "${filerCondition}" in filter condition selector if filerInRange is present
+
+
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to remove transaction filter
+#Example: I remove transaction filter on transaction
+#-----------------------------------------------------------------
+Scenario: I remove transaction filter "<filter>"
+  And I get filter details for "$<filter>"
+  And I scroll to transaction ladder column "${filterNameIs}"
+  And more option menu can be located by javascript
+    """
+    $('stl-ladder-transaction-grid span').filter(function() {
+        return $(this).text() === "${filterNameIs}";
+    }).parent().siblings().get(0);
+    """
+  And I click more option menu
+  And I wait for filter menu
+  And notOnFilterTab is defined by javascript "!$('[ref="tabHeader"] [class="ag-icon ag-icon-filter"]').parent().hasClass("ag-tab-selected")"
+  And I click filter menu if notOnFilterTab
+  And setPerspectiveFilterInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(0)"
+  And setPerspectiveFilterToInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(1)"
+  And cbFilters is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" != "Value Date" && "${filterNameIs}" != "Amount"})();"
+  And Amount filter is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" == "Amount"})();"
+  And Date filter is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" == "Value Date"})();"
+  And I unset filter for cbfilter if cbFilters is present
+  And I unset filter for amount if Amount filter is present
+  And I unset filter for value date if Date filter is present
+  And I scroll to first column of transaction ladder
+  And I click transactionGridHeader
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to remove filter for checkbox type columns
+#Example: And I unset filter for cbfilter
+#-----------------------------------------------------------------
+Scenario: I unset filter for cbfilter
+  And I clear setPerspectiveFilterInputField if perspectiveValue is present
+  And I type "a" in setPerspectiveFilterInputField if perspectiveValue is present
+  And I wait 3 seconds if perspectiveValue is present
+  And I send "BACK_SPACE" to setPerspectiveFilterInputField if perspectiveValue is present
+  And allUnselected is defined by javascript
+    """
+      (function() {
+        var result=true;
+        if($('#selectAll').get(0)!=null)
+          if($('#selectAll span').hasClass("ag-icon-checkbox-checked"))
+            result=false;
+        return result;
+      })()
+    """
+  ##WA##And I click filter menu select all checkbox if allUnselected
+  And selectAll is defined by javascript
+    """
+      (function() {
+        var result="";
+        if($('#selectAll').get(0)!=null){
+          $('#selectAll').click();
+          if($('#selectAll span').hasClass("ag-icon-checkbox-checked"))
+            result="Done";
+        }
+        return result;
+      })()
+    """
+  And selectAll should be "Done"
+
+  @StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to remove filter for amount type columns
+#Example: And I unset filter for amount
+#-----------------------------------------------------------------
+  Scenario: I unset filter for amount
+    And I clear setPerspectiveFilterInputField if perspectiveValue is present
+    And I type "a" in setPerspectiveFilterInputField if perspectiveValue is present
+    And I wait 3 seconds if perspectiveValue is present
+    And I send "BACK_SPACE" to setPerspectiveFilterInputField if perspectiveValue is present
+    And I clear setPerspectiveFilterToInputField if filerInRange is present
+    And I type "a" in setPerspectiveFilterToInputField if filerInRange is present
+    And I wait 3 seconds if filerInRange is present
+    And I send "BACK_SPACE" to setPerspectiveFilterToInputField if filerInRange is present
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step set filter on transaction history grid for
+#Example: I set filter on transaction history grid for "Fund"
+#-----------------------------------------------------------------
+Scenario: I set filter on transaction history grid for "<filter>"
+  And filterIs is "$<filter>"
+  And I enter transaction history filter "${selectFilter}" for each selectFilter in filterIs delimited by ";"
+
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to apply transaction history filter
+#Example: And I enter transaction history filter "Account:=HDFCHFAC2;Category:=Trade"
+#-----------------------------------------------------------------
+Scenario: I enter transaction history filter "<filter>"
+  And I get filter details for "$<filter>"
+  And I scroll to transaction ladder column "${filterNameIs}"
+  And more option menu can be located by javascript
+    """
+    $('stl-ladder-historic-transaction-grid span').filter(function() {
+        return $(this).text() === "${filterNameIs}";
+    }).parent().siblings().get(0);
+    """
+  And I click more option menu
+  And I wait for filter menu
+  And notOnFilterTab is defined by javascript "!$('[ref="tabHeader"] [class="ag-icon ag-icon-filter"]').parent().hasClass("ag-tab-selected")"
+  And I click filter menu if notOnFilterTab
+  And setPerspectiveFilterInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(0)"
+  And setPerspectiveFilterToInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(1)"
+  And cbFilters is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" != "Value Date" && "${filterNameIs}" != "Amount"})();"
+  And Amount filter is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" == "Amount"})();"
+  And Date filter is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" == "Value Date"})();"
+  And I set filter for cbfilter if cbFilters is present
+  And I set filter for amount if Amount filter is present
+  And I set filter for value date if Date filter is present
+  And I scroll to first column of transaction history ladder
+  And I click transactionHistoryGridHeader
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to remove transaction history filter
+#Example: And I remove transaction history filter "<filter>"
+#-----------------------------------------------------------------
+Scenario: I remove transaction history filter "<filter>"
+  And I get filter details for "$<filter>"
+  And I scroll to transaction history ladder column "${filterNameIs}"
+  And more option menu can be located by javascript
+    """
+    $('stl-ladder-historic-transaction-grid span').filter(function() {
+        return $(this).text() === "${filterNameIs}";
+    }).parent().siblings().get(0);
+    """
+  And I click more option menu
+  And I wait for filter menu
+  And notOnFilterTab is defined by javascript "!$('[ref="tabHeader"] [class="ag-icon ag-icon-filter"]').parent().hasClass("ag-tab-selected")"
+  And I click filter menu if notOnFilterTab
+  And setPerspectiveFilterInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(0)"
+  And setPerspectiveFilterToInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(1)"
+  And cbFilters is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" != "Value Date" && "${filterNameIs}" != "Amount"})();"
+  And Amount filter is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" == "Amount"})();"
+  And Date filter is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" == "Value Date"})();"
+  And I unset filter for cbfilter if cbFilters is present
+  And I unset filter for amount if Amount filter is present
+  And I unset filter for value date if Date filter is present
+  And I scroll to first column of transaction history ladder
+  And I click transactionHistoryGridHeader
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to scroll to ladder column
+#Before executing this directly it is mandate to execute And I get column id for "30/09/2017 Projected Balance - STANDARD"
+#Example: And I scroll to ladder column "30/09/2017 Projected Balance - STANDARD"
+#-----------------------------------------------------------------
+Scenario: I scroll to ladder column "<columnName>"
+  And I execute javascript "count=1;"
+  And scrolling is defined by javascript
+  """
+  (function(){
+  	var result=""; var scrollDone="";
+  	function scrollSearch(){
+  		scrollPos=$('stl-ladder-grid .ag-body-viewport').scrollLeft();
+  		$('stl-ladder-grid .ag-body-viewport').scrollLeft(500*(count++));
+  		console.log(scrollPos+"  "+count);
+  	}
+  	if($('stl-ladder-grid [col-id*="${columnId}"] span[class="ag-icon ag-icon-menu"]').get(0)==null){
+  		console.log("in if");
+  		scrollSearch();
+  	}else{
+  		console.log("in else");
+  		result="Done";
+  	}
+  	return result;
+
+  })()
+  """
+  And scrolling should be "Done"
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to scroll to the first ladder column
+#Example: And I scroll to first column of ladder
+#-----------------------------------------------------------------
+Scenario:I scroll to first column of ladder
+  And I execute javascript
+    """
+    $('stl-ladder-grid .ag-body-viewport').scrollLeft(0);
+    """
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to scroll to transaction ladder column
+#Example: And I scroll to transaction ladder column "Trade Type"
+#-----------------------------------------------------------------
+Scenario: I scroll to transaction ladder column "<columnName>"
+  And I execute javascript "count=1;"
+  And scrolling is defined by javascript
+  """
+  (function(){
+  var result=""; var scrollDone="";
+  function scrollSearch(){
+    scrollPos=$('stl-ladder-transaction-grid .ag-body-viewport').scrollLeft();
+    $('stl-ladder-transaction-grid .ag-body-viewport').scrollLeft(250*(count++));
+    console.log(scrollPos+"  "+count);
+  }
+  if($('stl-ladder-transaction-grid .ag-header-viewport .ag-header-cell span:contains("$<columnName>") ').parent().siblings().get(0)==null){
+    console.log("in if");
+    scrollSearch();
+  }else{
+    console.log("in else");
+    result="Done";
+  }
+  return result;
+
+  })()
+  """
+  And scrolling should be "Done"
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to scroll to the first transaction ladder column
+#Example: And I scroll to first column of transaction ladder
+#-----------------------------------------------------------------
+Scenario:I scroll to first column of transaction ladder
+  And I execute javascript
+    """
+    $('stl-ladder-transaction-grid .ag-body-viewport').scrollLeft(0);
+    """
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to scroll to transaction history ladder column
+#Example: And I scroll to transaction history ladder column "Trade Type"
+#-----------------------------------------------------------------
+Scenario: I scroll to transaction history ladder column "<columnName>"
+  And I execute javascript "count=1;"
+  And scrolling is defined by javascript
+  """
+  (function(){
+  var result=""; var scrollDone="";
+  function scrollSearch(){
+    scrollPos=$('stl-ladder-historic-transaction-grid .ag-body-viewport').scrollLeft();
+    $('stl-ladder-historic-transaction-grid .ag-body-viewport').scrollLeft(200*(count++));
+    console.log(scrollPos+"  "+count);
+  }
+  if($('stl-ladder-historic-transaction-grid .ag-header-viewport .ag-header-cell span:contains("$<columnName>") ').parent().siblings().get(0)==null){
+    console.log("in if");
+    scrollSearch();
+  }else{
+    console.log("in else");
+    result="Done";
+  }
+  return result;
+
+  })()
+  """
+  And scrolling should be "Done"
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to scroll to the first transaction history ladder column
+#Example: And I scroll to first column of transaction history ladder
+#-----------------------------------------------------------------
+Scenario:I scroll to first column of transaction history ladder
+  And I execute javascript
+    """
+    $('stl-ladder-historic-transaction-grid .ag-body-viewport').scrollLeft(0);
+    """
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to apply fund filter
+#Example:And I enter fund filter "Code:=AUTOCODE900013"
+#-----------------------------------------------------------------
+Scenario: I enter fund filter "<filter>"
+  And I scroll to the bottom of heading
+  And I get filter details for "$<filter>"
+  And I execute javascript
+    """
+    $('span').filter(function() {
+        return $(this).text() === "${filterNameIs}";
+    }).parent().siblings().get(0).click();
+    """
+  And I wait for filter menu
+  And notOnFilterTab is defined by javascript "!$('[class="ag-icon ag-icon-filter"]').parent().hasClass("ag-tab-selected")"
+  And I click filter menu if notOnFilterTab
+  And I select "${filerCondition}" in filter condition selector if filerCondition is present
+  And I select "${filerCondition}" in filter condition selector if filerInRange is present
+  And setPerspectiveFilterInputField can be located by id "filterText"
+  And setPerspectiveFilterToInputField can be located by id "filterToText"
+  #And firstFilterValue is "${filterValueIs}" if perspectiveValue is present
+  And firstFilterValue is defined by javascript "(function(){ return "${filterValueIs}".replace(/[^a-zA-Z\d-.' ']/ig,"");})()" if filerCondition is present
+  And firstFilterValue is defined by javascript "(function(){ return "${filterValueIs}".split("<>")[0];})()" if filerInRange is present
+  And secondFilterValue is defined by javascript "(function(){ return "${filterValueIs}".split("<>")[1];})()" if filerInRange is present
+  And I type "${firstFilterValue}" in setPerspectiveFilterInputField if perspectiveValue is present
+  And I type "${secondFilterValue}" in setPerspectiveFilterToInputField if filerInRange is present
+  And I scroll to the bottom of heading
+  And I click heading
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to remove fund filter
+#Example:And I remove fund filter "Fund:HDF"
+#-----------------------------------------------------------------
+Scenario: I remove fund filter "<filter>"
+  And I scroll to the bottom of heading
+  And I get filter details for "$<filter>"
+  And I execute javascript
+    """
+    $('span').filter(function() {
+        return $(this).text() === "${filterNameIs}";
+    }).parent().siblings().get(0).click();
+    """
+  And I wait for filter menu
+  And notOnFilterTab is defined by javascript "!$('[class="ag-icon ag-icon-filter"]').parent().hasClass("ag-tab-selected")"
+  And I click filter menu if notOnFilterTab
+  And setPerspectiveFilterInputField can be located by id "filterText"
+  And setPerspectiveFilterToInputField can be located by id "filterToText"
+  And I clear setPerspectiveFilterInputField if perspectiveValue is present
+  And I type "a" in setPerspectiveFilterInputField if perspectiveValue is present
+  And I wait 3 seconds if perspectiveValue is present
+  And I send "BACK_SPACE" to setPerspectiveFilterInputField if perspectiveValue is present
+  And I clear setPerspectiveFilterToInputField if filerInRange is present
+  And I type "a" in setPerspectiveFilterToInputField if filerInRange is present
+  And I wait 3 seconds if filerInRange is present
+  And I send "BACK_SPACE" to setPerspectiveFilterToInputField if filerInRange is present
+  And I scroll to the bottom of heading
+  And I click heading
+
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to apply accounts group filter
+#Example:And I enter accounts group filter "Amount:90989.898"
+#-----------------------------------------------------------------
+Scenario: I enter accounts group filter "<filter>"
+  And I get filter details for "$<filter>"
+  And I scroll to account group ladder column "${filterNameIs}"
+  And more option menu can be located by javascript
+    """
+    $('stl-account-group-grid span').filter(function() {
+        return $(this).text() === "${filterNameIs}";
+    }).parent().siblings().get(0);
+    """
+  And I click more option menu
+  And I wait for filter menu
+  And notOnFilterTab is defined by javascript "!$('[ref="tabHeader"] [class="ag-icon ag-icon-filter"]').parent().hasClass("ag-tab-selected")"
+  And I click filter menu if notOnFilterTab
+  And setPerspectiveFilterInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(0)"
+  And setPerspectiveFilterToInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(1)"
+  And cbFilters is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" != "Value Date" && "${filterNameIs}" != "Amount"})();"
+  And Amount filter is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" == "Amount"})();"
+  And Date filter is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" == "Value Date"})();"
+  And I set filter for cbfilter if cbFilters is present
+  And I set filter for amount if Amount filter is present
+  And I set filter for value date if Date filter is present
+  And I scroll to first column of account group ladder
+  And I click header
+
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to remove accounts group filter
+#Example: I remove accounts group filter on accounts group
+#-----------------------------------------------------------------
+Scenario: I remove accounts group filter "<filter>"
+  And I get filter details for "$<filter>"
+  And I scroll to account group ladder column "${filterNameIs}"
+  And more option menu can be located by javascript
+    """
+    $('stl-account-group-grid span').filter(function() {
+        return $(this).text() === "${filterNameIs}";
+    }).parent().siblings().get(0);
+    """
+  And I click more option menu
+  And I wait for filter menu
+  And notOnFilterTab is defined by javascript "!$('[ref="tabHeader"] [class="ag-icon ag-icon-filter"]').parent().hasClass("ag-tab-selected")"
+  And I click filter menu if notOnFilterTab
+  And setPerspectiveFilterInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(0)"
+  And setPerspectiveFilterToInputField can be located by javascript "$('input[class="ag-filter-filter"]').get(1)"
+  And cbFilters is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" != "Value Date" && "${filterNameIs}" != "IDEL Pool Limit" && "${filterNameIs}" != "Amount"})();"
+  And Amount filter is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" == "Amount" && "${filterNameIs}" == "IDEL Pool Limit"})();"
+  And Date filter is present is defined by javascript "(function() {return "${filterNameIs}" != "''" && "${filterNameIs}" == "Value Date"})();"
+  And I unset filter for cbfilter if cbFilters is present
+  And I unset filter for amount if Amount filter is present
+  And I unset filter for value date if Date filter is present
+  And I scroll to first column of account group ladder
+  And I click header
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to Set calender date filter
+#Example:And I set date in from date as "01" "12" "2000"
+#Example:And I set date in to date as "01" "12" "2000"
+#-----------------------------------------------------------------
+Scenario: I set date in <typeOfDate> as "<day>" "<month>" "<year>"
+  And setFilterForDate is defined by javascript
+  """
+    (function(){
+        var result=false;
+        var dateToSet = "$<year>"+"-"+"$<month>"+"-"+"$<day>" ;
+        if ("$<typeOfDate>" == "from date"){
+            $('#filterDateFromPanel input').val(dateToSet);
+              result=true;
+        }
+        if("$<typeOfDate>" == "to date"){
+            $('#filterDateToPanel input').val(dateToSet);
+              result=true;
+            result=true;
+        }
+          return result;
+    })()
+  """
+  And setFilterForDate should be "true"

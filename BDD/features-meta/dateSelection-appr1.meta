@@ -1,0 +1,32 @@
+@ladder
+Feature: Date action using javascript
+
+@StepDef
+##############################################
+#---------------------------------------------
+#Step to set start and end date
+#Example:When I set start date 01/07/2017
+#---------------------------------------------
+Scenario: I set <fromTo> date "<dateGiven>"
+	And I execute javascript
+	 """
+    i = "$<fromTo>" === "start" ? 1:2;
+    var m = moment();
+    var myDate = new Date();
+    var newDate = moment("$<dateGiven>", "DD/MM/YYYY");
+    m.set(newDate.toObject());
+    var myDate = m.format("MM/DD/YYYY");
+		$('.stl-date-ladder.ng-isolate-scope:nth-child('+i+') .stl-datepicker-date.ng-binding').datepicker( "setDate", myDate );
+	 """
+  And dateIS is defined by javascript
+    """
+     (function() {
+      var m = moment();
+  		var myDate = new Date();
+  		var newDate = moment("$<dateGiven>", "DD/MM/YYYY");
+  		m.set(newDate.toObject());
+  		return m.format("LL");
+     })();
+    """
+	And $<fromTo> date should be dateIS
+	And I wait 5 seconds

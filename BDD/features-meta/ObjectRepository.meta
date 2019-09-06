@@ -1,0 +1,362 @@
+ Feature: Config Meta
+ ###############################################################
+ #--------------------------------------------------------------
+ #Configuration scenario, all configuration wil be added in this
+ #--------------------------------------------------------------
+ # Scenario:Configure the home page
+ #    When I am on the home page
+    # Then the url will be "${baseUrl}"
+
+ @StepDef
+ #########################################################
+ #--------------------------------------------------------------
+ #Step to navigate to module page
+ #Example:And I navigate to fund page
+ #--------------------------------------------------------------
+ # Scenario:I navigate to <moduleName> page
+ #   Given I navigate to the home page
+    #  And $<moduleName> menu should be displayed
+    #  And I click $<moduleName> menu
+
+
+ @StepDef
+ #########################################################
+ #--------------------------------------------------------------
+ #Step to navigate to module page
+ #Example:And I navigate to fund page
+ #--------------------------------------------------------------
+ Scenario:I navigate to module <moduleName>
+     And $<moduleName> menu should be displayed
+     And I click $<moduleName> menu
+
+ @StepDef
+ #####################################################################
+ #--------------------------------------------------------------------
+ #Step to navigate to fund page
+ #Example:And I navigate to fund page
+ #--------------------------------------------------------------------
+ Scenario:I navigate to home page
+   And I scroll to top of page
+   And  newHomeButtonVisible is defined by javascript "(function(){return $('#mainPageContent span p:contains("Home")').is(":visible")})()"
+   And I click go to home page button if newHomeButtonVisible
+   And I execute javascript "$('#sliderChart li:eq(0) a').click()"
+   And choose year can be located by javascript "$('bs-days-calendar-view:first button[class="current"]').get(1)"
+   And I wait for page to load
+
+Scenario: Configure common locators page
+    And ladder menu can be located by css selector "#ladder > div"
+    And strategy menu can be located by css selector "#strategy-menu > div"
+    And alert menu can be located by css selector "#alert-menu > div"
+    And fund menu can be located by css selector "#fund-menu > div"
+    And the group management menu can be located by css selector "#groups > div"
+    And addToFavorite can be located by css selector "[uib-tooltip="Add to Favourites"]"
+    And favoriteDropdown can be located by id "favoritesToggle"
+    And favoriteInput can be located by id "newFavorite"
+    And remove sort can be located by javascript "$('button:contains("Remove Sort")').get(0)"
+    And sort ascending can be located by javascript "$('button:contains("Sort Ascending")').get(0)"
+    And sort descending can be located by javascript "$('button:contains("Sort Descending")').get(0)"
+    And group can be located by javascript "$('button:contains("Group")').get(0)"
+    And unGroup can be located by javascript "$('button:contains("Ungroup")').get(0)"
+    And showAllTransactions can be located by javascript "$('.stl-ladder-transaction-grid-show-all-transactions-checkbox')"
+    And export to csv can be located by javascript "$('button:contains("Export as CSV")').get(0)"
+    And ladderGrid text can be located by javascript "$('[ref="eText"]')"
+
+ Scenario: Configure common locators for cash ladder page
+   Given heading can be located by tag name "h1"
+     And smallmenubar can be located by id "smallMenuBar"
+     And perspective selector can be located by javascript "$('label:contains("Perspective")').closest("div").find('stl-fancy-select')"
+     And balanceType selector can be located by javascript "$('label:contains("Balance Types")').closest("div").find('type-ahead')"
+     And start date calender can be located by javascript "$('[date="startDateDatepicker"]> span > span').get(0)"
+     And end date calender can be located by javascript "$('[date="endDateDatepicker"]> span > span').get(0)"
+
+  Scenario: Configure common locators for fund page
+     And create fund can be located by css selector "#fund-create-button"
+     And fund form can be located by id "fund-form"
+     And fund name input field can be located by id "stl-inputfund-name-edit"
+     And fund code input field can be located by id "stl-inputfund-code-edit"
+     And fund email input field can be located by id "stl-inputfund-email-edit"
+     And fund description input field can be located by id "stl-inputfund-description-edit"
+     And fund address input field can be located by id "stl-inputfund-address-edit"
+     And fund group selector can be located by id "stl-select-fund-groupId-edit"
+     And fundVersionGrid can be located by id "funds-history-grid"
+     And account selector can be located by id "stl-multi-select-fund-accounts-edit"
+    And account selector from can be located by javascript "$('multi-select div div:nth-child(1) select').get(0)"
+    And account selector to can be located by javascript "$('multi-select div div:nth-child(3) select').get(0)"
+    And account add all button can be located by css selector "button >i[class='fa fa-angle-double-right']"
+    And account add one button can be located by css selector "button >i[class='fa fa-angle-right']"
+    And account remove all button can be located by css selector "button >i[class='fa fa-angle-double-left']"
+    And account remove one button can be located by css selector "button >i[class='fa fa-angle-left']"
+    And create form account filter from field can be located by javascript "$('multi-select input').get(0)"
+    And create form account filter to field can be located by javascript "$('multi-select input').get(1)"
+     And fund create button can be located by id "fund-form-create-button"
+     And fund cancel button can be located by id "fund-form-cancel-button"
+     And fund edit button can be located by id "fund-form-edit-button"
+     And fund save button can be located by id "fund-form-save-button"
+     And fund name mandatory message can be located by javascript "$('#stl-inputfund-name-edit').parent().parent().children(':first-child').next().get(0)"
+     And fund code mandatory message can be located by javascript "$('#stl-inputfund-code-edit').parent().parent().children(':first-child').next().get(0)"
+     And fund email mandatory message can be located by javascript "$('#stl-inputfund-email-edit').parent().parent().children(':first-child').next().next().get(0)"
+     And fund address mandatory message can be located by javascript "$('#stl-inputfund-address-edit').parent().parent().children(':first-child').next().get(0)"
+     And exceeding character limit message for fund name can be located by javascript "$('#stl-inputfund-name-edit').parent().parent().children(':first-child').next().next().get(0)"
+     And exceeding character limit message for fund code can be located by javascript "$('#stl-inputfund-code-edit').parent().parent().children(':first-child').next().next().get(0)"
+     And exceeding character limit message for fund email can be located by javascript "$('#stl-inputfund-email-edit').parent().parent().children(':first-child').next().get(0)"
+     And exceeding character limit message for fund address can be located by javascript "$('#stl-inputfund-address-edit').parent().parent().children(':first-child').next().get(0)"
+     And exceeding character limit message for fund description can be located by javascript "$('#stl-input-fund-description-review').parent().parent().children(':first-child').next().get(0)"
+     And invalid email message for fund email can be located by javascript "$('#stl-inputfund-email-edit').parent().parent().children(':first-child').next().next().next().get(0)"
+     And next page can be located by javascript "$('#ladder-component [ng-click="pageNextPageClick()"]').get(0)"
+     And first page can be located by javascript "$('#ladder-component [ng-click="pageFirstPageClick()"]').get(0)"
+     And notification dialog can be located by css selector "[ng-repeat="toaster in toasters"]"
+     And create strategy can be located by id "strategy-create-button"
+     And grid header can be located by javascript "$('.ui-grid-header-cell-wrapper').get(1)"
+     And transaction next page can be located by javascript "$('#ladderTransactions [ng-click="pageNextPageClick()"]').get(0)"
+     And transaction first page can be located by javascript "$('#ladderTransactions [ng-click="pageFirstPageClick()"]').get(0)"
+     And alerts first page can be located by javascript "$('#alerts-grid [ng-click="pageFirstPageClick()"]').get(0)"
+
+  Scenario: Configure common locators for strategy page
+     And strategy form can be located by id "strategy-form"
+     And strategy name input field can be located by id "stl-inputstrategy-name-edit"
+     And strategy description input field can be located by id "stl-inputstrategy-description-edit"
+     And fund selector can be located by id "stl-multi-select-strategy-funds-edit"
+     And strategy create button can be located by id "strategy-form-create-button"
+     And strategy cancel button can be located by id "strategy-form-cancel-button"
+     And strategy edit button can be located by id "strategy-form-edit-button"
+     And strategy save button can be located by id "strategy-form-save-button"
+     And strategy name mandatory message can be located by javascript "$('#stl-inputstrategy-name-edit').parent().parent().children(':first-child').next().get(0)"
+     And strategy fund mandatory message can be located by javascript "$('#stl-multi-select-strategy-funds-edit').parent().parent().children(':first-child').next().get(0)"
+     And exceeding character limit message for strategy name can be located by javascript "$('#stl-inputstrategy-name-edit').parent().parent().children(':first-child').next().next().get(0)"
+     And exceeding character limit message for strategy description can be located by javascript "$('#stl-input-strategy-description-review').parent().parent().children(':first-child').next().get(0)"
+     And showStrategyFilter can be located by css selector "[ng-model="showStrategyFilter"]"
+
+ Scenario: Configure common locators for alert page
+   And group input field can be located by javascript "$('.search-field:first input').get(0)"
+   And emailAndPreview can be located by id "email-preview-button"
+   And addNarrative can be located by id "add-narrative-button"
+   And closeAlert can be located by id "close-alert-button"
+   And unlockAlert can be located by id "unlock-alert-button"
+   And lockToMe can be located by id "lock-to-me-alert-button"
+   And forceUnlockAlert can be located by id "force-unlock-alert-button"
+   And mailSubject can be located by javascript "$('h3').get(0)"
+   And saveNarrative can be located by id "save-narrative-button"
+   And narrativeInputField can be located by id "narrative-input"
+   And showNarrativeButton can be located by javascript "$('a:contains("Show narrative")').get(0)"
+   And addNarrativeButton can be located by javascript "$('a:contains("Add narrative")').get(0)"
+   And headerButton can be located by javascript "$('[ng-click="headerButtonClick($event)"]').get(0)"
+   And lockedToInfo can be located by id "locked-to-info"
+   And no data can be located by javascript "$('#borderLayout_eGridPanel').get(0)"
+   And no alerts can be located by javascript "$('[ng-show="noAlerts"]').get(0)"
+   And authorization message can be located by id "mainPageContent"
+
+ Scenario: Validation Texts for objects
+    Given ladder page header is "Cash Ladder"
+      And no data message is "No data to display."
+      And fund name error message is "Fund Name is mandatory"
+      And fund code error message is "Fund Code is mandatory"
+      And fund email error message is "Email Address is mandatory"
+      And fund address error message is "Fund Address is mandatory"
+      And strategy name error message is "Strategy Name is mandatory"
+      And strategy fund error message is "Strategy Fund is mandatory"
+      And login page title is "SmartStream Technologies-page_login"
+      And group successful creation message is "Successfully created new group."
+      And group duplicate name error message is "Group name already exists."
+      And not authorised message is "You are not authorised to access the requested resource."
+      And invalid fund email address message is "Email Address format invalid."
+
+  Scenario: Notification Message
+    And alert box title can be located by javascript "$('[ng-repeat="toaster in toasters"] [ng-class="config.title"]').get(0)"
+    And alert box message can be located by javascript "$('[ng-repeat="toaster in toasters"] [ng-class="config.message"]').get(0)"
+    And internal server error alert box title is "Internal Server Error"
+
+ Scenario: Configure common locators for the group management page
+  And the create group button can be located by javascript "$('div[class="btn btn-primary pull-right"]').get(0)"
+  And the group name field can be located by javascript "$('div[class="form-group"] input[name="name"]').get(0)"
+  And the group description field can be located by javascript "$('div[class="form-group"] input[name="description"]').get(0)"
+  And the group users from selector can be located by javascript "$('[ng-reflect-name="fromUserIds"]').get(0)"
+  And the group users to selector can be located by javascript "$('[ng-reflect-name="groupUserIds"]').get(0)"
+  And the group users filter from selector field can be located by javascript "$('.stl-group-multi-select input').get(0)"
+  And the group users filter to selector field can be located by javascript "$('.stl-group-multi-select input').get(1)"
+  And the group edit save button can be located by javascript "$('div[class="stl-group-btn-row"] button:contains("Save")').get(0)"
+  And the group edit cancel button can be located by javascript "$('div[class="stl-group-btn-row"] button:contains("Cancel")').get(0)"
+  And the add all group button can be located by css selector "a>i[class='fa fa-angle-double-right']"
+  And the add one group button can be located by css selector "a>i[class='fa fa-angle-right']"
+  And the remove all group button can be located by css selector "a>i[class='fa fa-angle-double-left']"
+  And the remove one group button can be located by css selector "a>i[class='fa fa-angle-left']"
+  And the alert box for group management can be located by javascript "$('#toast-container [role="alertdialog"]')"
+  And the go to first page button can be located by javascript "$('button[ng-click="pageFirstPageClick()"]').get(0)"
+  ##And the import favorite button can be located by javascript "$('[ng-click="mainController.importFavorites()"]').get(1)"
+  And the export favorite button can be located by javascript "$('[ng-click="mainController.exportFavorites(upc.favorites())"]').get(0)"
+
+
+#=======================================New UI==========================================================#
+Scenario: Configuration of locators for common page.
+  And go to home page button can be located by javascript "$('#mainPageContent span p:contains("Home")')"
+  And next page button can be located by javascript "$('button[ref="btNext"]').get(0)"
+  And previous page button can be located by javascript "$('button[ref="btPrevious"]').get(0)"
+  And first page button can be located by javascript "$('button[ref="btFirst"]').get(0)"
+  And last page button can be located by javascript "$('button[ref="btLast"]').get(0)"
+  And favoriteAddMessageHead is "Favourite Added"
+  And favoriteAddMessageText is "Your favourite is added."
+  And favoriteUpdateMessageHead is "Favourite updated"
+  And favoriteUpdateMessageText is "Your favourite is updated."
+  And favoriteRemovedMessageHead is "Favourite Removed"
+  And favoriteRemovedMessageText is "Your favourite is removed."
+  And favoriteImportArea can be located by javascript "$('#favoritesImportArea').get(0)"
+  And export button can be located by javascript "$('.ag-menu span:contains("Export")').get(0)"
+  And export to excel button can be located by javascript "$('.ag-menu span:contains("Excel Export (.xlsx)")').get(0)"
+  And export to csv button can be located by javascript "$('.ag-menu span:contains("CSV Export")').get(0)"
+  And filter menu can be located by javascript "$('[ref="tabHeader"] [class="ag-icon ag-icon-filter"]').get(0)"
+  And filter condition selector can be located by id "filterType"
+  And filter menu select all checkbox can be located by id "selectAll"
+  And group menu can be located by javascript "$('[ref="tabHeader"] [class="ag-icon ag-icon-menu"]').get(0)"
+  And favoriteButton can be located by javascript "$('stl-favorites a[ng-click="toggleFavorite()"]')"
+  And manageFavoriteButton can be located by javascript "$('stl-favorites i[uib-tooltip="Manage Favourites"]')"
+  And manageFavoriteHeading can be located by javascript "$('#manageFavorites h3')"
+  And newFavoriteName can be located by id "newFavorite"
+  And addFavorite can be located by javascript "$('stl-favorites button:contains("Done")')"
+  And removeFavorite can be located by javascript "$('stl-favorites button:contains("Remove")')"
+  And cancelFavorite can be located by javascript "$('stl-favorites button:contains("Cancel")')"
+  And removeManageFavoriteButton can be located by javascript "$('#manageFavorites button:contains("Remove")')"
+  And confirmRemoveFavoriteButton can be located by javascript "$('.sweet-alert button.confirm')"
+  And closeManageFavoritesButton can be located by javascript "$('#manageFavorites button.close')"
+  And the import favorite button can be located by javascript "$('[ng-click="mainController.importFavorites()"]')"
+  And confirmNotificationButton can be located by javascript "$('.sweet-alert button.confirm')"
+  And approveButton can be located by javascript "$('div.btn:contains("Approve"):visible')"
+  And yesButton can be located by javascript "$('button:contains("Yes"):visible')"
+  And noButton can be located by javascript "$('button:contains("No"):visible')"
+  And cancelButton can be located by javascript "$('button:contains("Cancel"):visible').get(1)"
+  And cancelButtonInValidationPrompt can be located by javascript "$('stl-validation-prompt-dialog button:contains("Cancel"):visible')"
+  And sweepSaveButton can be located by javascript "$('button:contains("Save"):visible')"
+
+
+Scenario: Configuration of locators for ladder page
+  And group selector can be located by javascript "$('label:contains("Groups")').closest("div").find('type-ahead input')"
+  And balance type selector can be located by javascript "$('label:contains("Balance Types")').closest("div").find('type-ahead input')"
+  And dateRange can be located by javascript "$('stl-ladder-datepicker p')"
+  And ladderGrid can be located by javascript "$('stl-ladder-grid .stl-ladder-grid-body')"
+  And first row of ladderGrid can be located by javascript "$('stl-ladder-grid [class="ag-pinned-left-cols-viewport"] [row-index="0"]').get(0)"
+  And ladder date range selector can be located by javascript "$('stl-ladder-datepicker i.fa')"
+  And transactionGrid can be located by javascript "$('stl-ladder-transaction-grid .stl-ladder-transaction-grid-body')"
+  And transactionGridHeader can be located by javascript "$('stl-ladder-transaction-grid h2.stl-ladder-transaction-grid-header-text')"
+  And first row of TransactionGrid can be located by javascript "$('stl-ladder-transaction-grid [class*="ag-body-viewport"] [role="row"] [col-id*="account"]').get(0)"
+  And transactionHistoryGrid can be located by javascript "$('stl-ladder-historic-transaction-grid .stl-ladder-transaction-grid-body')"
+  And transactionHistoryGridHeader can be located by javascript "$('stl-ladder-historic-transaction-grid h2.stl-ladder-transaction-grid-header-text')"
+  And first row of transactionHistoryGrid can be located by javascript "$('stl-ladder-historic-transaction-grid [class*="ag-body-viewport"] [role="row"] [col-id*="account"]').get(0)"
+
+
+Scenario: Configuration of locators for alert page
+  And first row of alertsGrid can be located by javascript "$('[class*="ag-body-viewport"] [role="row"] [col-id="ag-Grid-AutoColumn"]').get(0)"
+  And save note button can be located by id "save-note-button"
+  And noteInputField can be located by id "note-input"
+  And alert start date calender can be located by javascript "$('alert-start-date-picker > span > span').get(0)"
+  And alert end date calender can be located by javascript "$('alert-end-date-picker > span > span').get(0)"
+  And alert start date can be located by javascript "$('alert-start-date-picker .stl-datepicker-date.ng-binding').get(0)"
+  And alert end date can be located by javascript "$('alert-end-date-picker .stl-datepicker-date.ng-binding').get(0)"
+  And return to today button can be located by javascript "$('span[ng-click="dateChanged && resetDate()"] i')"
+  And group selector on alerts dashboard can be located by javascript "$('input[value="Select Some Options"]').get(0)"
+  And send and close button can be located by id "send-email-close-alert-button"
+
+Scenario: Configuration of locators for fund page
+  And first row of fundGrid can be located by javascript "$('#funds-grid [class*="ag-body-viewport"] [row-index="0"]')"
+  And first row of fundVersionHistoryGrid can be located by javascript "$('#funds-history-grid [class*="ag-body-viewport"] [row-index="0"]')"
+
+Scenario: Configuration of locators for group management page
+  And first row of groupManagementGrid can be located by javascript "$('stl-grid [class*="ag-body-viewport"] [role="row"]:first')"
+
+Scenario: Configuration of locators for account group dashboardselectorScenario: Configure common locators for account group page
+ And account group menu can be located by css selector "#account-groups > div"
+ And accountGroupGrid can be located by javascript "$('stl-account-group-grid')"
+ And liquidityCheck can be located by id "pool-liquidity-check"
+ And accountGroupGridHeader can be located by javascript "$('stl-account-group-grid h2').get(0)"
+ And first row of accountGroupGrid can be located by javascript "$('stl-account-group-grid [row-index="0"] [col-id*="accountGroupType"]').get(0)"
+ And columnName of first row can be located by javascript "$('stl-account-group-grid [row-index="0"] [col-id*="name"]').get(0)"
+ And header can be located by css selector "h1"
+ And grid header can be located by css selector "h2"
+ And createAccountGroup can be located by javascript "$('div.btn:contains("Create New")').get(0)"
+ And accounts available can be located by javascript "$('p:contains("ACCOUNTS AVAILABLE")').parent().siblings('select')"
+ And accounts selected can be located by javascript "$('p:contains("ACCOUNTS INCLUDED")').parent().siblings('select')"
+ And noAccountSelectedMsgDialog can be located by javascript "$('p:contains("ACCOUNTS INCLUDED")').parent().siblings('select').next().find('p').get(0)"
+ And accountGroupPage can be located by javascript "$('span p:contains("Account Groups")').get(0)"
+ And homeButton can be located by javascript "$('span p:contains("Home")').get(0)"
+ And remove button can be located by id "remove-button"
+ And removeAll button can be located by id "remove-all-button"
+ And add button can be located by xpath "//stl-account-group-multi-select//button[text()[normalize-space() ="Add"]]"
+ And addAll button can be located by xpath "//stl-account-group-multi-select//button[text()[normalize-space() ="Add all"]]"
+ And currency selector can be located by javascript "$('#currency')"  
+ And legalEntity selector can be located by javascript "$('#bank-legal-entity')"
+ And fxRateType selector can be located by javascript "$('#fx-rate-type')"
+ And poolBalanceType selector can be located by javascript "$('#pool-balance-type')"
+ And pfcBalanceType selector can be located by javascript "$('#liquidity-balance-type')"
+ And futurePaymentDate selector can be located by javascript "$('#future-liquidity-balance-type')"
+ And poolType selector can be located by javascript "$('#pool-type')"
+ And accountGroupType selector can be located by javascript "($'#account-group-type')"
+ And submitForDeactivation can be located by javascript "$('div.btn:contains("Submit for Deactivation")').get(0)"
+ And approveDeactivation can be located by javascript "$('div.btn:contains("Approve Deactivation")').get(0)"
+ And errorMsg can be located by javascript "$('p b').get(0)"
+ And authorization message can be located by id "mainPageContent"
+ And formError can be located by javascript "$('stl-account-group-form-error b')"
+ And deactivateConfirmationDialog can be located by javascript "$('stl-account-group-prompt-dialog h4:contains("Deactivating Pool")').get(0)"
+ And approveDeactivateConfirmationDialog can be located by javascript "$('stl-account-group-prompt-input-dialog h4:contains("Approve Pool Deactivation")').get(0)"
+ And deactivationReason can be located by id "deactivationReason"
+ And deactivateConfirmationDialogMsg can be located by javascript "$('stl-account-group-prompt-dialog p').get(0)"
+ And deactivationErrorMsgIs can be located by javascript "$('stl-account-group-form-error b')"
+ And first row of accountGroupHistoryGrid can be located by javascript "$('stl-account-group-historic-grid .ag-body [row-index="0"] [col-id*="accountGroupType"]').get(0)"
+ And accountGroupHistoryGridHeader can be located by javascript "$('stl-account-group-historic-grid h2').get(0)"
+ And account group form cancelButton can be located by javascript "$('div.btn:contains("Cancel"):visible')"
+ And saveButton can be located by javascript "$('div.btn:contains("Save"):visible')"
+ And editButton can be located by javascript "$('div.btn:contains("Edit"):visible')"
+ And confirmButton can be located by javascript "$('button:contains("Confirm"):visible')"
+ And okButton can be located by javascript "$('button:contains("OK"):visible')"
+ And account filter fromField for accountGroupForm can be located by javascript "$('div:contains("ACCOUNTS AVAILABLE") > div.stl-multi-select-search-wrapper input')"
+ And account filter toField for accountGroupForm can be located by javascript "$('div:contains("ACCOUNTS INCLUDED") > div.stl-multi-select-search-wrapper input')"
+ And strategiesHeader can be located by xpath "//div[contains(@class,'stl-fund-strategies-form-header')]/div[text()[normalize-space() = 'Strategies']]"
+ And addStrategyButton can be located by xpath "//div[contains(@class,'stl-fund-strategies-form-header')]/div[text()[normalize-space() = 'Strategies']]/span[text()[normalize-space() = 'Add Strategy']]"
+ And strategySection can be located by tag name "stl-strategy-form"
+ And excludeSweepButton can be located by xpath "//div[contains(@class,"ag-menu")]//span[text()[normalize-space() ="Exclude"]]"
+ And includeSweepButton can be located by xpath "//div[contains(@class,"ag-menu")]//span[text()[normalize-space() ="Include"]]"
+ And primaryCurrencyWarning is "No Primary Currency Set. FX movements are not available. Sweeping and Topping is Available."
+ And primaryAccountWarning is "Primary account is not set for this currency."
+ And primaryAccountErrorMsg is "Primary account is required."
+ And processFinishedMessage is "Process finished."
+ And accountRemoveWarningMessage is "Accounts removed: "
+ And accountCannotBeRemovedWarningMessage is "Accounts that can not be removed: "
+ And statusChipMessage can be located by xpath "//tlmv-chip/div"
+ And accountCannotBeRemovedErrorMessage is "Some accounts could not be removed. Please exclude sweep pair accounts first, then remove accounts from the Fund. "
+
+Scenario:TLMM_VIEW dashboard locators
+  ##WA##And tlmViewDashBoard menu can be located by javascript "$('#analyticsLander [href="#/data-sources"]')"
+  And tlmViewDashBoard menu can be located by xpath "//*[@id="analyticsLander"]//a[@href="#/dashboardselector"]"
+  And popupHeader can be located by tag name "h2"
+  And popupHeaderMsg can be located by javascript "$('p').get(0)"
+  And sort order of export is ""
+  And rightClickMenu can be located by class name "stl-grid-context-menu"
+  And cancelSweep can be located by id "btnProcessCaption_Cancel_Sweep"
+  And homeDashBoardBtn can be located by id "lnkDashboardBrowserHome"
+  And sideBar can be located by css selector "[class="sidebar-toggle"]"
+  And cmsSweepDashBoardHeader can be located by css selector "[id*=btnEditWidgetNamewidget]"
+  And dataSourceTab can be located by id "dataSourceTab"
+  And suggestionMissingErrorMsg is "Please create a suggestion to define the structure for Sweep action."
+
+
+Scenario:Sweeps page locators
+    And sweepsPage menu can be located by css selector "#sweeps > div"
+    And sweepsPageHeader can be located by tag name "h1"
+    And first row of sweepsGrid can be located by javascript "$('[class*="ag-body-container"] [role="row"] [col-id="generatedDate"]').get(0)"
+    And first column of sweep ladder can be located by javascript "$('[class*="ag-body-container"] [role="row"] [col-id="generatedDate"]').get(0)"
+    And columnButton can be located by css selector "div.ag-side-buttons > div:nth-child(1) > button > span"
+    And sweepformErrorMsg can be located by css selector "[class*="stl-form-error-popup-body"] b"
+    And reasonForCancellation can be located by id "reasonForCancellation"
+    And notificationHeader can be located by css selector "[class*="toast-title"]"
+    And notificationMsg can be located by css selector "[class*="toast-message"]"
+    And sweepDateSelector can be located by javascript "$('stl-sweep-datepicker i.fa')"
+    And submitForCancelBtn can be located by javascript "$('button:contains("Submit for cancellation"):visible')"
+
+
+Scenario:Account Groups Timeline locators
+    And timeline can be located by xpath "//tlmv-sidebar"
+    And accountGroupsSideBarButton can be located by id "toggleSidebarIcon" 
+    And timelineHeading can be located by xpath "//stl-account-group-sidebar//header/label[@class='tlmv-c-sidebar-tab-content-header-title']"
+    And timelineContent can be located by xpath "//stl-account-group-audit//div"
+  
+Scenario: Status Chip Colors
+    And orangeColor is "rgb(247, 156, 29)"
+    And lightOrangeColor is "rgb(231, 173, 26)"
+    And greenColor is "rgb(97, 172, 9)"
+    And greyColor is "rgb(222, 229, 233)"

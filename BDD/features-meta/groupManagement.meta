@@ -1,0 +1,683 @@
+@groupmanagement
+Feature:group management meta
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Verifies current page is group management page.
+#--------------------------------------------------------------------------------------
+Scenario: I go to the group management page
+  Given I navigate to module the group management
+    And heading should contain "Group Management"
+    ##removed##And I wait for grid header text
+    And I wait for first row of groupManagementGrid
+    And I wait for page to load
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Verifies current page is group management page.
+#--------------------------------------------------------------------------------------
+Scenario: I open create group form
+  Given I scroll to top of page
+  And I wait for the create group button
+  When I click the create group button
+  Then I should be on the create group page
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Verifing that the Iframe form for create group is opened successfully
+#--------------------------------------------------------------------------------------
+Scenario:I should be on the create group page
+  And I wait for the group name field
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Verifies current page is group management page.
+#--------------------------------------------------------------------------------------
+Scenario: I close create group form
+  And I click the group edit cancel button
+  And I wait until "(function(){return $('modal-container[class="modal fade in"]').is(':visible')!=true })()"
+  ##removed##And I wait for grid header text
+  And I wait for first row of groupManagementGrid
+
+
+@StepDef
+@DataTable(header="top")
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Verifies current page is group management page.
+#--------------------------------------------------------------------------------------
+Scenario: I check for the headings
+  ##removed##And I wait for grid header text
+  And I wait for first row of groupManagementGrid
+  And I check for the heading is "${data[heading]}" for each data record
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Verifies current page is not authorised message page
+#--------------------------------------------------------------------------------------
+Scenario: I check for the heading is "<heading>"
+  And the headings are present is defined by javascript
+    """
+    (function(){
+        	var str="";
+        	$('.ag-header-row .ag-header-cell').each(function(){
+            if($(this).text().trim()=="$<heading>")
+      				str="present";
+    			});
+        	  return str;
+        })()
+    """
+    Then the headings are present should be "present"
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Verifies user is unable to view group management menu and not authorised message page
+#--------------------------------------------------------------------------------------
+Scenario: I verify user is unable to view group management menu
+  And I navigate to module the group management
+    Then authorization message should be "${not authorised message}"
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Verifing that group name is mandatory for group creation
+#--------------------------------------------------------------------------------------
+Scenario:I verify group name is mandatory for group creation
+  And I open create group form
+    And save button status is defined by javascript
+      """
+      (function(){
+      	var str="";
+      	if($('div[class="stl-group-btn-row"] button:contains("Save")').get(0).disabled==true)
+      		str="Disabled";
+      	return str;
+        })()
+      """
+    And save button status should be "Disabled"
+  And I close create group form
+
+
+@StepDef
+@DataTable(header="top")
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Creating new group.
+#Example:
+# And I create group
+#    | groupName    | groupDescription | selectUser      |
+#    | testgroup    | testingauto      | CM1,CM2         |
+#--------------------------------------------------------------------------------------
+Scenario:I create group
+  And I create group with "${data[groupName]}" "${data[groupDescription]}" "${data[selectUser]}" for each data record
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Steps to create new group and verify group gets created successfully
+#Example:
+# And I create group with "testgroup" "testingauto" "CM1,CM2"
+#--------------------------------------------------------------------------------------
+Scenario:I create group with "<groupName>" "<groupDescription>" "<selectUser>"
+  And I open create group form
+    And I enter the groupName "$<groupName>"
+    And I enter the groupDescription "$<groupDescription>"
+    And I select the users "$<selectUser>"
+    And I click the group edit save button
+    And the alert box for group management should be "${group successful creation message}"
+    And dialogExist is defined by javascript "(function(){return $('#toast-container [role="alertdialog"]').is(':visible') })()"
+    And I close create group form
+    And I wait until "(function(){return $('#toast-container [role="alertdialog"]').is(':visible')!=true })()"
+    And group id is defined by sql "select ID from SECURITY_GROUP where NAME='$<groupName>'" in the ${dbName} database
+    And I verify group "$<groupName>" is present on the group management page
+    And I verify group "$<groupName>" have ID is "${group id}"
+    And I verify group "$<groupName>" have Description is "${groupDescription}"
+    And I click first page button
+
+
+@StepDef
+@DataTable(header="top")
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to edit attributes of group
+#Example:
+#And I edit attributes of group
+#     | groupName | groupDescription | selectUser     | removeUser |
+#     | testgroup | testgroupdescription | HPF1,HPF2  | CM1        |
+#----------------------------------------------------------------------------------------------------------
+Scenario: I edit attributes of group
+  And I edit group with "${data[groupName]}" "${data[groupDescription]}" "${data[selectUser]}" "${data[removeUser]}" for each data record
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to edit attributes of group
+#Example:
+# And I edit group with "testgroup" "groupdescription" "HPF1,HPF2" "CM1"
+#----------------------------------------------------------------------------------------------------------
+Scenario: I edit group with "<groupName>" "<groupDescription>" "<selectUser>" "<removeUser>"
+  And I select group "${groupName}" to edit
+  And I enter the groupName "$<groupName>"
+  And I enter the groupDescription "$<groupDescription>"
+  And I select the users "$<selectUser>"
+  And I remove the users "$<removeUser>"
+  And I click the group edit save button
+  And the alert box for group management should be "Successfully updated group with name '$<groupName>'."
+  And dialogExist is defined by javascript "(function(){return $('#toast-container [role="alertdialog"]').is(':visible') })()"
+  And I close create group form
+  And I wait until "(function(){return $('#toast-container [role="alertdialog"]').is(':visible')!=true })()"
+  And I verify group "$<groupName>" is present on the group management page
+  And I verify group "$<groupName>" have Description is "${groupDescription}"
+  And I click first page button
+
+
+@StepDef
+@DataTable(header="top")
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to edit group name as duplicate value
+#Example:
+#And I edit group name as duplicate
+#   | groupName  | newGroupName  | groupDescription     | selectUser | removeUser  |
+#   | test_auto1 | test_auto2 | testgroupdescription    |CM1         | HPF1        |
+#----------------------------------------------------------------------------------------------------------
+Scenario: I edit group name as duplicate
+  And I edit group name as duplicate with "${data[groupName]}" "${data[newGroupName]}" "${data[groupDescription]}" "${data[selectUser]}" "${data[removeUser]}" for each data record
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to edit group name as duplicate value
+#Example:
+# And I edit group name as duplicate with "testgroup" "test_auto2" "groupdescription" "CM1" "HPF1"
+#----------------------------------------------------------------------------------------------------------
+Scenario: I edit group name as duplicate with "<groupName>" "<newGroupName>" "<groupDescription>" "<selectUser>" "<removeUser>"
+  And I select group "$<groupName>" to edit
+  And oldGroupDescription is defined by javascript "(function(){return $('div[class="form-group"] input[name="description"]').get(0).value.trim() })()"
+  And checkDescription is "${oldGroupDescription}"
+  And I enter the groupName "$<newGroupName>"
+  And I enter the groupDescription "$<groupDescription>"
+  And I select the users "$<selectUser>"
+  And I remove the users "$<removeUser>"
+  And I click the group edit save button
+  And the alert box for group management should be "${group duplicate name error message}"
+  And dialogExist is defined by javascript "(function(){return $('#toast-container [role="alertdialog"]').is(':visible') })()"
+  And I close create group form
+  And I wait until "(function(){return $('#toast-container [role="alertdialog"]').is(':visible')!=true })()"
+  And I verify group "$<groupName>" is present on the group management page
+  And I verify group "$<groupName>" have Description is "${checkDescription}"
+  And I click first page button
+
+
+
+@StepDef
+@DataTable(header="top")
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to create duplicate group
+#Example:
+#And I create duplicate group
+#   | groupName     | groupDescription          | selectUser  |
+#   | autogroup14   | autogroupdescription14    | CM1,CM2     |
+#----------------------------------------------------------------------------------------------------------
+Scenario:I create duplicate group
+  And I create duplicate group with "${data[groupName]}" "${data[groupDescription]}" "${data[selectUser]}" for each data record
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to create duplicate group
+#Example:
+# And I create duplicate group with "testgroup" "groupdescription" "CM1,CM2"
+#----------------------------------------------------------------------------------------------------------
+Scenario: I create duplicate group with "<groupName>" "<groupDescription>" "<selectUser>"
+  And I open create group form
+    And I enter the groupName "$<groupName>"
+    And I enter the groupDescription "$<groupDescription>"
+    And I select the users "$<selectUser>"
+    And I click the group edit save button
+    And the alert box for group management should be "${group duplicate name error message}"
+    And dialogExist is defined by javascript "(function(){return $('#toast-container [role="alertdialog"]').is(':visible') })()"
+    And I close create group form
+    And I wait until "(function(){return $('#toast-container [role="alertdialog"]').is(':visible')!=true })()"
+
+
+
+@StepDef
+@DataTable(header="top")
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify limit of group name and group description input field
+#Example:
+# And I verify length of input fields for group management
+# | groupName  | expectedGroupName  | groupDescription     | expectedGroupDescription  |
+# | abcdefghijklmnopqrstuvwxyzabcd | abcdefghijklmnopqrstuvwxyzabcd | abcdefghijklmnopqrstuvwxyzabcde    |abcdefghijklmnopqrstuvwxyzabcde   |
+# | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz    |abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz   |
+#----------------------------------------------------------------------------------------------------------
+Scenario: I verify length of input fields for group management
+  And I open create group form
+  And I verify length of input fields for group management with "${data[groupName]}" "${data[expectedGroupName]}" "${data[groupDescription]}" "${data[expectedGroupDescription]}" for each data record
+  And I close create group form
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify limit of group name and group description input field
+#Example:
+# And I verify length of input fields for group management with "abcdefghijklmnopqrstuvwxyzabcd" "abcdefghijklmnopqrstuvwxyzabcd" "abcdefghijklmnopqrstuvwxyzabcde" "abcdefghijklmnopqrstuvwxyzabcd"
+#----------------------------------------------------------------------------------------------------------
+Scenario: I verify length of input fields for group management with "<groupName>" "<expectedGroupName>" "<groupDescription>" "<expectedGroupDescription>"
+    And I enter the groupName "$<groupName>"
+    And I enter the groupDescription "$<groupDescription>"
+    And the group name field should be "$<expectedGroupName>"
+    And the group description field should be "$<expectedGroupDescription>"
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to enter group name
+#Example:And I enter groupName "testgroup1"
+#--------------------------------------------------------------------------------------
+Scenario: I enter the groupName "<groupName>"
+  And value is present is defined by javascript "(function() {return "$<groupName>" != "''"})();"
+  And groupName is "$<groupName>" if value is present
+  And I enter "${groupName}" in the group name field if value is present
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to enter group description
+#Example:And I enter groupDescription "testgroupdescription"
+#--------------------------------------------------------------------------------------
+Scenario: I enter the groupDescription "<groupDescription>"
+  And value is present is defined by javascript "(function() {return "$<groupDescription>" != "''"})();"
+  And groupDescription is "$<groupDescription>" if value is present
+  And I enter "${groupDescription}" in the group description field if value is present
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to select user/s
+#Example:I select the users "CM1,CM2"
+#--------------------------------------------------------------------------------------
+Scenario: I select the users "<selectUser>"
+  And userIs is "$<selectUser>"
+  And value is present is defined by javascript "(function() {return "$<selectUser>" != "''"})();"
+  And I select "${selectUser}" in the group users from selector for each selectUser in userIs delimited by "," if value is present
+  And I click the add one group button if value is present
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to remove user/s
+#Example:I remove the users "CM1,CM2"
+#--------------------------------------------------------------------------------------
+Scenario: I remove the users "<removeUser>"
+  And userIs is "$<removeUser>"
+  And value is present is defined by javascript "(function() {return "$<removeUser>" != "''"})();"
+  And I select "${removeUser}" in the group users to selector for each removeUser in userIs delimited by "," if value is present
+  And I click the remove one group button if value is present
+
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify selection of user in create group
+#Example:
+#And I verify "CM1,CM2" users can be selected
+#----------------------------------------------------------------------------------------------------------
+Scenario: I verify "<selectUser>" users can be selected
+  And userIs is "$<selectUser>"
+  And value is present is defined by javascript "(function() {return "$<selectUser>" != "''"})();"
+  And I select user "${selectUser}" for each selectUser in userIs delimited by "," if value is present
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify adding one by one user in create fund
+#Example:
+#And I select user "HDF1"
+#----------------------------------------------------------------------------------------------------------
+Scenario: I select user "<selectUser>"
+  And I select "$<selectUser>" in the group users from selector
+  And I click the add one group button
+  And I verify "$<selectUser>" user is selected
+
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify deselection of user in create group
+#Example:
+#And I verify "HDF1,HDF2" users can be removed
+#----------------------------------------------------------------------------------------------------------
+Scenario: I verify "<removeUser>" users can be removed
+  And userIs is "$<removeUser>"
+  And value is present is defined by javascript "(function() {return "$<removeUser>" != "''"})();"
+  And I remove user "${removeUser}" for each removeUser in userIs delimited by "," if value is present
+
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify removing one by one user in create fund
+#Example:
+#And I remove user "HDF1"
+#----------------------------------------------------------------------------------------------------------
+Scenario: I remove user "<removeUser>"
+  And I select "$<removeUser>" in the group users to selector
+  And I click the remove one group button
+  And I verify "$<removeUser>" user is removed
+
+
+@StepDef
+#######################################################
+#------------------------------------------------------
+#Step to edit attributes of group
+#Example:
+# And I select group "testgroup" to edit
+#------------------------------------------------------
+Scenario: I select group "<groupName>" to edit
+    ##removed##And I wait for grid header text
+    And I wait for first row of groupManagementGrid
+    And openEditWindowResult is defined by javascript
+      """
+      (function(){
+      rowIndex="";result="";
+        $('[class*="ag-body-viewport"] [role="row"]').each(function(index){
+         if($(this).find("div[col-id='name']").text().trim()=="$<groupName>")
+                       rowIndex=$(this).attr('row-index');
+        });
+        if(rowIndex==""){
+          $('button[ref="btNext"]').click();
+        }else{
+         $('[row-index="'+rowIndex+'"] div[col-id="name"]').get(0).click();
+         result="Done";
+        }
+        return result;
+    })()
+      """
+    And openEditWindowResult should be "Done"
+    And I wait for the group edit save button
+
+
+@StepDef
+#############################################################
+#------------------------------------------------------------
+#Step to verify group is present in groups table
+#Example: And I verify group "testgroup1" is present on the group management page
+#------------------------------------------------------------
+Scenario: I verify group "<groupName>" is present on the group management page
+  And createGroupResult is defined by javascript
+    """
+    (function(){
+      a=[];result="";
+      function getData() {
+        $('stl-grid [class*="ag-body-viewport"] [role="row"] [col-id="name"]').each(function (){
+           if($(this).text() == "$<groupName>") {
+                     result = "Done";
+                     console.log("matched: "+$(this).text());
+                     a.push($(this).text())
+                }
+          });
+        if(a.length==0) {
+            $('button[ref="btNext"]').get(0).click()
+         }
+        else{
+             result = "Done"
+        }
+     }
+      getData();
+      return result;
+    })();
+    """
+  Then createGroupResult should be "Done"
+
+
+@StepDef
+############################################################
+#-----------------------------------------------------------
+#Step to verify parameter of group on group grid
+#Example:And I verify group "testgroup1" have Description is "testgroupdescription"
+#-----------------------------------------------------------
+Scenario:I verify group "<groupName>" have <property> is "<data>"
+ And result is defined by javascript
+  """
+  (function getResult(){
+    var result,colId;
+  $('.ag-header-container .ag-header-cell span:contains("$<property>")').parents().filter(function(){if($(this).attr('col-id')!=null){colId=$(this).attr('col-id')}})
+   $('.ag-body-viewport [role="row"]').each(function(){
+     if($(this).find("div[col-id='name']").text().trim()=="$<groupName>")
+          if($(this).find("div[col-id='"+colId+"']").text().trim() == "$<data>")
+        result = "Done";
+
+  })
+    return result;
+  })()
+  """
+  And result should be "Done"
+
+@StepDef
+############################################################
+#-----------------------------------------------------------
+#Step to verify users of group
+#Example:And I verify for group "testgroup1" Users are "HDF1,HDF2"
+#-----------------------------------------------------------
+Scenario:I verify for <name> "<groupName>" <property> are "<data>"
+  And userIs is "$<data>"
+  And value is present is defined by javascript "(function() {return "$<data>" != "''"})();"
+  And I verify "${selectUser}" user is selected for each selectUser in userIs delimited by "," if value is present
+
+@StepDef
+############################################################
+#-----------------------------------------------------------
+#Step to verify user is selected
+#Example:And I verify "HDF1" user is selected
+#-----------------------------------------------------------
+Scenario:I verify "<selectUser>" user is selected
+    And result is defined by javascript
+    """
+    (function getResult(){
+      var result="";
+      $('[ng-reflect-name="groupUserIds"] option').each(function(){
+        if(($(this).text().trim())=="$<selectUser>")
+          result="Done";
+      });
+      return result;
+    })()
+    """
+    And result should be "Done"
+    And result is defined by javascript
+    """
+    (function getResult(){
+      var result="";
+      if($('[ng-reflect-name="fromUserIds"] option').get(0)==null)
+        result="Done";
+      $('[ng-reflect-name="fromUserIds"] option').each(function(){
+        if(($(this).text().trim()) != "$<selectUser>")
+          result="Done";
+        else{result="";return false;}
+      });
+      return result;
+    })()
+    """
+    And result should be "Done"
+
+
+@StepDef
+############################################################
+#-----------------------------------------------------------
+#Step to verify user is removed
+#Example:And I verify "HDF1" user is removed
+#-----------------------------------------------------------
+Scenario:I verify "<selectUser>" user is removed
+    And result is defined by javascript
+    """
+    (function getResult(){
+      var result="";
+      $('[ng-reflect-name="fromUserIds"] option').each(function(){
+        if(($(this).text().trim()) == "$<selectUser>")
+          result="Done";
+      });
+      return result;
+    })()
+    """
+    And result should be "Done"
+    And result is defined by javascript
+    """
+    (function getResult(){
+      var result="";
+      if($('[ng-reflect-name="groupUserIds"] option').get(0)==null)
+        result="Done";
+      $('[ng-reflect-name="groupUserIds"] option').each(function(){
+        if(($(this).text().trim()) != "$<selectUser>"){
+          result="Done";
+          }else{result="";return false;}
+      });
+      return result;
+    })()
+    """
+    And result should be "Done"
+
+
+@StepDef
+############################################################
+#-----------------------------------------------------------
+#Step to verify user selector from contains user in alphabetical order which are not associated
+#Example:I verify unassociated users
+#-----------------------------------------------------------
+Scenario:I verify unassociated users
+    And result is defined by javascript
+    """
+    (function(){
+	   a="";result="";
+	    $('[ng-reflect-name="fromUserIds"] option').each(function(){
+        if(($(this).text().trim()) > a){
+			     result="Done";a=$(this).text().trim()
+		    }
+        else{result="";return result;}
+      });
+		return result;
+    })()
+    """
+  And result should be "Done"
+  And I capture the current screenshot
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify select all users and remove all users in create group form
+#Example:
+#And I verify select all and remove all users
+#----------------------------------------------------------------------------------------------------------
+Scenario:I verify select all and remove all users
+  And I click the add all group button
+  And no options in from is defined by javascript
+  """
+  (function(){
+  str="";
+  if($('[ng-reflect-name="fromUserIds"] option').get(0)==null)
+  		str="Done";
+  return str;
+  })()
+  """
+  Then no options in from should be "Done"
+  And I capture the current screenshot
+  And I click the remove all group button
+  And no options in to is defined by javascript
+  """
+  (function(){
+  str="";
+  if($('[ng-reflect-name="groupUserIds"] option').get(0)==null)
+  		str="Done";
+  return str;
+  })()
+  """
+  Then no options in to should be "Done"
+  And I capture the current screenshot
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to select and verify filtering in create group form
+#Example:
+#And I apply filter "M#M" on users
+#----------------------------------------------------------------------------------------------------------
+Scenario: I apply filter "<filterUsers>" on users
+  And userIs is "$<filterUsers>"
+  And value is present is defined by javascript "(function() {return "$<filterUsers>" != "''"})();"
+  And I enter user filter "${filterUsers}" for each filterUsers in userIs delimited by "," if value is present
+  And I capture the current screenshot
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify user filter in create group form
+#Example:
+#And I enter user filter "HDF1"
+#----------------------------------------------------------------------------------------------------------
+ Scenario: I enter user filter "<filterUsers>"
+  And I type "$<filterUsers>" in the group users filter from selector field
+  And filtered is defined by javascript
+  """
+  (function(){
+    str="";
+  $('[ng-reflect-name="fromUserIds"] option').each(function()
+  {
+    if($(this).text().trim().indexOf("$<filterUsers>") >= 0)
+    		str="Done";
+    else{str="";return false;}
+  });
+  return str;
+  })()
+  """
+  Then filtered should be "Done"
+  And I capture the current screenshot
+
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to remove filter in create group form
+#Example:
+#And  I remove users filter
+#----------------------------------------------------------------------------------------------------------
+Scenario: I remove users filter
+  And I clear the group users filter from selector field
+  And options present is defined by javascript
+  """
+  (function(){
+  str="";
+  if($('[ng-reflect-name="fromUserIds"] option').get(0)!=null)
+  		str="Done";
+  return str;
+  })()
+  """
+  Then options present should be "Done"
+  And I capture the current screenshot
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify users selection in create group with filtering
+#Example:
+#And I select users "HDF1,HDF2" by applying "HDF" on users filter
+#----------------------------------------------------------------------------------------------------------
+Scenario:I select users "<selectUser>" by applying "<filterUsers>" on users filter
+  And I open create group form
+  And I apply filter "$<filterUsers>" on users
+  And userIs is "$<selectUser>"
+  And value is present is defined by javascript "(function() {return "$<selectUser>" != "''"})();"
+  And I select user "${selectUser}" for each selectUser in userIs delimited by "," if value is present
+  And I capture the current screenshot

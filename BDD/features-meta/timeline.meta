@@ -1,0 +1,100 @@
+@timeline
+Feature: timeline Meta
+
+@StepDef
+#-------------------------------------------------------------
+#Step to view timeline after navigating to a fund on account group dashboard
+#Example:And I view timeline of account group "FUND49"
+#-------------------------------------------------------------
+Scenario:I view timeline of account group "<groupName>"
+     Given notPresentOnAccountGroupPage is defined by javascript "(function(){return $('span b:contains($<groupName>)').length!=1})()"
+     And I navigate to page of account group "$<groupName>" if notPresentOnAccountGroupPage
+     And I view timeline
+
+@StepDef
+#-------------------------------------------------------------
+#Step to view timeline of a fund
+#Example:And I view timeline 
+#-------------------------------------------------------------    
+  Scenario:I view timeline
+    Given I scroll to top of page
+    And timelineNotVisible is defined by javascript 
+     """
+      (function(){
+       if($('tlmv-sidebar').length==0)
+           return true;
+       else
+           return false;
+      })()
+     """
+     And I click accountGroupsSideBarButton if timelineNotVisible
+     And timeline should be displayed
+     And timelineHeading should be "Audit"
+     
+@StepDef
+#-------------------------------------------------------------
+#Step to collapse timeline
+#Example:And I collapse timeline
+#-------------------------------------------------------------
+Scenario:I collapse timeline
+      Given timelineVisible is defined by javascript "(function(){return $('tlmv-sidebar').is(":visible")})()"
+      And I click accountGroupsSideBarButton if timelineVisible
+      And auditHeading not present is defined by javascript 
+      """ 
+        (function(){
+          auditHeadingNode= document.evaluate("//stl-account-group-sidebar//header/label[@class='tlmv-c-sidebar-tab-content-header-title']", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+          if(auditHeadingNode==null){
+          	return true;
+          }
+          return false;
+        })()
+      """
+      And auditHeading not present should be "true"
+    
+@StepDef
+#-------------------------------------------------------------
+#Step to verify that sidebar button is not visible
+#Example:And I verify timeline sidebar button is not visible
+#-------------------------------------------------------------
+Scenario:I verify timeline sidebar button is not visible
+  And accountGroupsSideBarButton should not be displayed
+
+@StepDef
+@DataTable(header="top")
+#-------------------------------------------------------------
+#Step to verify timeline details on the sidebar
+#Example:And I verify timeline details on the sidebar without sequence check
+#-------------------------------------------------------------
+Scenario:I verify timeline details of account group
+  And I verify timeline details with "${data[actionIs]}" "${data[actionBy]}" "${data[actionedOn]}" "${data[newDetails]}" "${data[oldDetails]}" "${data[actionCount]}" for each data record
+  
+
+@StepDef
+Scenario: I verify timeline details with "<actionIs>" "<actionBy>" "<actionedOn>" "<newDetails>" "<oldDetails>" "<actionCount>"
+  And newtimelineAction can be located by xpath "//tlmv-audit-entry/tlmv-audit-entry-status//tlmv-icon/../../..//tlmv-edit-audit-entry//span[contains(text(),'$<actionIs>')]/../../span[contains(text(),'made by ')]//../span[contains(text(),'$<actionBy>')]//ancestor::tlmv-edit-audit-entry//span[contains(text(),'$<actionedOn>')]/../../span[contains(text(),'content changed to "$<newDetails>"')]"
+  And newtimelineAction should be displayed
+  And originalDetails can be located by xpath "//tlmv-audit-entry/tlmv-audit-entry-status//tlmv-icon/../../..//tlmv-edit-audit-entry//span[contains(text(),'$<actionIs>')]/../../span[contains(text(),'made by ')]//../span[contains(text(),'$<actionBy>')]//ancestor::tlmv-edit-audit-entry//span[contains(text(),'Original value')]/../../span[contains(text(),'was "$<oldDetails>".')]"
+  And originalDetails should be displayed
+  And verifyActionCount is defined by javascript "(function () {return $<actionCount>!=''})()"
+  And actionCountIs is defined by javascript "(function() {return $('tlmv-audit-entry:nth-child(1) span:contains("$<actionIs>")').closest('span:contains("made by")').closest('span:contains("$<actionBy>")').closest('tlmv-edit-audit-entry').find('div').length})()" if verifyActionCount
+  And actionCountIs should be "$<actionCount>" if verifyActionCount
+
+@StepDef
+@DataTable(header="top")
+#-------------------------------------------------------------
+#Step to verify timeline details on the sidebar
+#Example:And I verify timeline details on the sidebar with sequence check
+#-------------------------------------------------------------
+Scenario:I verify timeline details of account group with sequence
+  And I verify timeline details with sequence "${data[sequenceNo]}" "${data[actionIs]}" "${data[actionBy]}" "${data[actionedOn]}" "${data[newDetails]}" "${data[oldDetails]}" "${data[actionCount]}" for each data record
+  
+
+@StepDef
+Scenario: I verify timeline details with sequence "<sequenceNo>" "<actionIs>" "<actionBy>" "<actionedOn>" "<newDetails>" "<oldDetails>" "<actionCount>"
+  And newtimelineAction can be located by xpath "(//tlmv-edit-audit-entry)[$<sequenceNo>]//span[contains(text(),'$<actionIs>')]/../../span[contains(text(),'made by ')]//../span[contains(text(),'$<actionBy>')]//ancestor::tlmv-edit-audit-entry//span[contains(text(),'$<actionedOn>')]/../../span[contains(text(),'content changed to "$<newDetails>"')]"
+  And newtimelineAction should be displayed
+  And originalDetails can be located by xpath "(//tlmv-edit-audit-entry)[$<sequenceNo>]//span[contains(text(),'$<actionIs>')]/../../span[contains(text(),'made by ')]//../span[contains(text(),'$<actionBy>')]//ancestor::tlmv-edit-audit-entry//span[contains(text(),'Original value')]/../../span[contains(text(),'was "$<oldDetails>".')]"
+  And originalDetails should be displayed
+  And verifyActionCount is defined by javascript "(function () {return $<actionCount>!=''})()"
+  And actionCountIs is defined by javascript "(function() {return $('tlmv-audit-entry:nth-child($<sequenceNo>) span:contains("$<actionIs>")').closest('span:contains("made by")').closest('span:contains("$<actionBy>")').closest('tlmv-edit-audit-entry').find('div').length})()" if verifyActionCount
+  And actionCountIs should be "$<actionCount>" if verifyActionCount

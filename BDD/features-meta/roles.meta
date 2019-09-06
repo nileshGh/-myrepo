@@ -1,0 +1,186 @@
+@roles
+Feature: Roles meta
+
+@StepDef
+#########################################################
+#--------------------------------------------------------------
+#Step to verify user unable to create new fund
+#Example:And I verify user can not create fund
+#--------------------------------------------------------------
+Scenario: I verify user can not create fund
+   And I scroll to top of page
+   And createAccNotPresent is defined by javascript "(function() { return $('div.btn:contains("Create New")').length==0})()"
+   And createAccNotPresent should be "true"
+
+@StepDef
+#########################################################
+#--------------------------------------------------------------
+#Step to verify user unable to edit fund
+#Example:I verify user can not edit fund "HSBC PENSION FUND"
+#--------------------------------------------------------------
+Scenario: I verify user can not edit fund "<fundName>"
+  And I navigate to page of account group "$<fundName>"
+  And editBtnNotPresent is defined by javascript "(function() { return $('div.btn:contains("Edit")').length==0})()"
+  And editBtnNotPresent should be "true"
+
+@StepDef
+#########################################################
+#--------------------------------------------------------------
+#Step to verify user unable to create new strategy
+#Example:And I verify user can not create strategy
+#--------------------------------------------------------------
+Scenario:I verify user can not create strategy
+   And I scroll to top of page
+  And createButtonStatus is defined by javascript
+  """
+    (function(){
+      status="active";
+      if($('#strategy-create-button').attr("disabled")=="disabled"){
+        status="disabled";
+      }
+      return status;
+    })()
+  """
+  And createButtonStatus should be "disabled"
+
+@StepDef
+#########################################################
+#--------------------------------------------------------------
+#Step to verify user unable to edit strategy
+#Example:I verify user can not edit strategy "HSBC PENSION FUND"
+#--------------------------------------------------------------
+Scenario:I verify user can not edit strategy "<strategyName>"
+  And I navigate to strategy page of strategy "$<strategyName>" to edit
+  And editButtonStatus is defined by javascript
+  """
+    (function(){
+      status="active";
+      if($('#strategy-form-edit-button').attr("disabled")=="disabled"){
+        status="disabled";
+      }
+      return status;
+    })()
+  """
+  And editButtonStatus should be "disabled"
+
+
+@StepDef
+#########################################################
+#--------------------------------------------------------------
+#Step to verify user able to create new fund
+#Example:And I verify user can create fund
+#--------------------------------------------------------------
+Scenario:I verify user can create fund
+   And I scroll to top of page
+  And createAccountGroup should be displayed
+
+@StepDef
+#########################################################
+#--------------------------------------------------------------
+#Step to verify user able to edit fund
+#Example:I verify user can edit fund "HSBC PENSION FUND"
+#--------------------------------------------------------------
+Scenario:I verify user can edit fund "<fundName>"
+  And I navigate to page of account group "$<fundName>"
+  And editButton should be displayed
+
+
+@StepDef
+#########################################################
+#--------------------------------------------------------------
+#Step to verify user able to create new strategy
+#Example:And I verify user can create strategy
+#--------------------------------------------------------------
+Scenario:I verify user can create strategy
+   And I scroll to top of page
+  And createButtonStatus is defined by javascript
+  """
+    (function(){
+      status="disabled";
+      if($('#strategy-create-button').attr("disabled")!="disabled"){
+        status="active";
+      }
+      return status;
+    })()
+  """
+  And createButtonStatus should be "active"
+
+@StepDef
+#########################################################
+#--------------------------------------------------------------
+#Step to verify user able to edit strategy
+#Example:I verify user can edit strategy "HSBC PENSION FUND"
+#--------------------------------------------------------------
+Scenario:I verify user can edit strategy "<strategyName>"
+  And I navigate to strategy page of strategy "$<strategyName>" to edit
+  And editButtonStatus is defined by javascript
+  """
+    (function(){
+      status="disabled";
+      if($('#strategy-form-edit-button').attr("disabled")!="disabled"){
+        status="active";
+      }
+      return status;
+    })()
+  """
+  And editButtonStatus should be "active"
+
+@StepDef
+#########################################################
+#--------------------------------------------------------------
+#Step to verify user able to create new group
+#Example:And I verify user can create group
+#--------------------------------------------------------------
+Scenario:I verify user can create group
+   And I scroll to top of page
+  And createButtonStatus is defined by javascript
+  """
+    (function(){
+      status="disabled";
+      if($('#fund-create-button').attr("disabled")!="disabled"){
+        status="active";
+      }
+      return status;
+    })()
+  """
+  And createButtonStatus should be "active"
+
+@StepDef
+#########################################################
+#--------------------------------------------------------------
+#Step to verify user able to edit group
+#Example:I verify user can edit group "autogroup43"
+#--------------------------------------------------------------
+Scenario:I verify user can edit group "<groupName>"
+  And I select group "$<groupName>" to edit
+  And editButtonStatus is defined by javascript
+  """
+    (function(){
+      status="disabled";
+      if($('div[class="stl-group-btn-row"] button:contains("Save")').attr("disabled")!="disabled"){
+        status="active";
+      }
+      return status;
+    })()
+  """
+  And editButtonStatus should be "active"
+
+@StepDef
+#########################################################
+#--------------------------------------------------------------
+#Step to verify all groups either selected or can be displayed on ladder dashboard
+#Example:I verify all groups are displayed
+#--------------------------------------------------------------
+Scenario:I verify all groups are displayed
+  And groups associated is defined by sql "select listagg( NAME, ',') within group (order by NAME) from (SELECT * FROM SECURITY_GROUP WHERE id IN (SELECT GROUP_ID FROM SECURITY_GROUP_USER))" in the ${dbName} database
+  And I verify group "${groupIs}" can be or selected on ladder dashboard for each groupIs in groups associated delimited by ","
+
+@StepDef
+#########################################################
+#--------------------------------------------------------------
+#Step to verify all groups either selected or can be displayed on alerts dashboard
+#Example:I verify all groups are displayed on alerts dashboard
+#--------------------------------------------------------------
+Scenario:I verify all groups are displayed on alerts dashboard
+  And groups associated is defined by sql "select listagg( NAME, ',') within group (order by NAME) from (SELECT * FROM SECURITY_GROUP WHERE id IN (SELECT GROUP_ID FROM SECURITY_GROUP_USER))" in the ${dbName} database
+  And I verify group "${groupIs}" can be or selected on alerts dashboard for each groupIs in groups associated delimited by ","

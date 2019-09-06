@@ -1,0 +1,1121 @@
+@fund
+Feature: fund page Meta
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Verifies current page is fund page. All Variables are defined inside config.meta file.
+#--------------------------------------------------------------------------------------
+Scenario:I go to the fund page
+ Given I navigate to module fund
+   And heading should be "Fund"
+   And smallmenubar should be displayed
+   And create fund should be displayed
+    And I scroll to top of page
+    And I wait for page to load
+
+@StepDef
+###################################
+#----------------------------------
+#Verifies current page is fund page
+#----------------------------------
+Scenario: I am on the fund page
+   And heading should be "Fund"
+    And I scroll to top of page
+
+@StepDef
+@DataTable(header="top")
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to create fund
+#Example:
+#And I create fund
+#    |fundName|fundCode|fundEmail            |fundDescription|fundAddress | accounts|
+#    |fund008|code0008|test0008@test0008.com|description1   |addresss0008| '' |
+#    |fund009|code0009|test0009@test0009.com|description1   |addresss0009| HDFGBPAC1|
+#    |fund010|code0010|test00010@test0010.com|description1   |addresss0010| HGFSGDAC2,HDFAEDAC2,HPFGBPAC2|
+#----------------------------------------------------------------------------------------------------------
+Scenario: I create fund
+  And I create fund with "${data[fundName]}" "${data[fundCode]}" "${data[fundEmail]}" "${data[fundDescription]}" "${data[fundAddress]}" "${data[accounts]}" "${data[group]}" for each data record
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to create fund and verify fund got created
+#Example:
+#And I create fund with "<fundName>" "<fundCode>" "<fundEmail>" "<fundDescription>" "<fundAddress>" "<accounts>"
+#   Where <accounts> is "account1,account2,account3"
+#----------------------------------------------------------------------------------------------------------
+Scenario: I create fund with "<fundName>" "<fundCode>" "<fundEmail>" "<fundDescription>" "<fundAddress>" "<accounts>" "<fundGroup>"
+  And I open create fund form
+  And I enter fundname "$<fundName>"
+  And I enter fundcode "$<fundCode>"
+  And I enter fundEmail "$<fundEmail>"
+  And I enter fundDescription "$<fundDescription>"
+  And I enter fundGroup "$<fundGroup>"
+  And I enter fundAddress "$<fundAddress>"
+  And accountIs is "$<accounts>"
+  And value is present is defined by javascript "(function() {return "$<accounts>" != "''"})();"
+  And I select "${selectaccount}" in account selector from for each selectaccount in accountIs delimited by "," if value is present
+  And I click account add one button if value is present
+   And I scroll to top of page
+  And I click fund create button
+  And alert box title should be "Fund created"
+  And alert box message should be "Fund was created successfully."
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+  And I wait until "(function(){return $('.toast-message').is(':visible')!=true })()"
+  And I wait for fund edit button
+  And I navigate to fund page
+  And fundCodeInUpperCase is defined by javascript "(function(){return "$<fundCode>".toUpperCase() })()"
+  And I enter fund filter "Name:$<fundName>"
+  And I verify fund "$<fundName>" is present on fund page
+  And I verify for fund "$<fundName>" Code is "${fundCodeInUpperCase}"
+  And I verify for fund "$<fundName>" Description is "${fundDescription}"
+  And I verify for fund "$<fundName>" Email Address is "${fundEmail}"
+  And I verify for fund "$<fundName>" Address is "${fundAddress}"
+  And default is present is defined by javascript "(function() {return "$<fundGroup>" == "''"})();"
+  And I verify for fund "$<fundName>" Group is "Default Group" if default is present
+  And group is present is defined by javascript "(function() {return "$<fundGroup>" != "''"})();"
+  And I verify for fund "$<fundName>" Group is "${fundGroup}" if group is present
+  And value is present is defined by javascript "(function() {return "$<accounts>" != "''"})();"
+  ##WA##And selectedAccounts is defined by javascript "(function(){return "$<accounts>".replace(/,/g,", ");})()"
+  And selectedAccounts is defined by javascript "(function(){return "$<accounts>";})()"
+  Then I verify for fund "$<fundName>" Accounts is "${selectedAccounts}" if value is present
+  And I remove fund filter "Name:$<fundName>"
+
+ @StepDef
+ ###################################
+ #----------------------------------
+ #Step to open create fund form
+ #----------------------------------
+ Scenario:I open create fund form
+   And I scroll to top of page
+    And I click create fund
+    And fund form should be displayed
+
+ @StepDef
+ #########################################
+ #----------------------------------------
+ #Step to enter fund name
+ #Example:And  I enter fundname "fundABC"
+ #----------------------------------------
+ Scenario:I enter fundname "<fundName>"
+    And value is present is defined by javascript "(function() {return "$<fundName>" != "''"})();"
+   And fundName is "$<fundName>" if value is present
+   And I enter "${fundName}" in fund name input field if value is present
+
+ @StepDef
+ ##################################################
+ #-------------------------------------------------
+ #Step to enter fund code
+ #Example:And I enter fundcode "code00081505900267"
+ #-------------------------------------------------
+ Scenario:I enter fundcode "<fundCode>"
+   And value is present is defined by javascript "(function() {return "$<fundCode>" != "''"})();"
+   And fundCode is "$<fundCode>" if value is present
+   And I enter "${fundCode}" in fund code input field if value is present
+
+ @StepDef
+ #########################################################
+ #--------------------------------------------------------
+ #Step to enter fund email
+ #Example: And  I enter fundEmail "test0008@test0008.com"
+ #--------------------------------------------------------
+ Scenario:I enter fundEmail "<fundEmail>"
+   And value is present is defined by javascript "(function() {return "$<fundEmail>" != "''"})();"
+   And fundEmail is "$<fundEmail>" if value is present
+   And I enter "${fundEmail}" in fund email input field if value is present
+
+ @StepDef
+ ####################################################
+ #---------------------------------------------------
+ #Step to enter fund description
+ #Example:And  I enter fundDescription "description1"
+ #---------------------------------------------------
+ Scenario:I enter fundDescription "<fundDescription>"
+   And value is present is defined by javascript "(function() {return "$<fundDescription>" != "''"})();"
+   And fundDescription is "$<fundDescription>" if value is present
+   And I enter "${fundDescription}" in fund description input field if value is present
+
+ @StepDef
+ ################################################
+ #-----------------------------------------------
+ #Step to enter fund email
+ #Example:And  I enter fundAddress "addresss0008"
+ #-----------------------------------------------
+ Scenario:I enter fundAddress "<fundAddress>"
+   And value is present is defined by javascript "(function() {return "$<fundAddress>" != "''"})();"
+   And fundAddress is "$<fundAddress>" if value is present
+   And I enter "${fundAddress}" in fund address input field if value is present
+
+
+@StepDef
+#############################################################
+#------------------------------------------------------------
+#Step to verify fund is present in fund table
+#Example: And I verify fund "fundABC" is present on fund page
+#------------------------------------------------------------
+Scenario: I verify fund "<fundName>" is present on fund page
+ And createFundResult is defined by javascript
+  """
+   (function(){
+       a=[];result="";
+         function getData() {
+  		 $('.ag-body-viewport [role="row"] [col-id="name"]').each(function(){
+  			console.log($(this).text());
+  			if($(this).text().trim()=="$<fundName>" ) {
+                        result = "Done";
+  					 a.push($(this).text());
+                   }
+  		})
+  	if(a.length==0) {
+  			$('button[ref="btNext"]').click();
+  		}
+  	else {
+            result = "Done"
+           }
+         }
+         getData();
+         return result;
+       })();
+  """
+  Then createFundResult should be "Done"
+
+
+@StepDef
+ #######################################################
+ #------------------------------------------------------
+ #Step to click on fund name present in fund table
+ #Example: And I navigate to fund page of fund "fundABC"
+ #------------------------------------------------------
+ Scenario: I navigate to fund page of fund "<fundName>"
+  And I enter fund filter "Name:=$<fundName>"
+  Given I scroll to top of page
+  And navigateResult is defined by javascript
+    """
+    (function(){
+    rowIndex="";result="";
+      $('[class*="ag-body-viewport"] [role="row"]').each(function(index){
+       if($(this).find("div[col-id='name']").text().trim()=="$<fundName>")
+                     rowIndex=$(this).attr('row-index');
+      });
+      if(rowIndex==""){
+        $('button[ref="btNext"]').click();
+      }else{
+       $('[row-index="'+rowIndex+'"] div[col-id="name"]').get(0).click();
+       result="Done";
+      }
+      return result;
+  })()
+  """
+  And navigateResult should be "Done"
+  And I wait 2 seconds
+  And I wait for fund edit button
+  And I click fund edit button
+  And I wait for fund save button
+  And I wait for page to load
+
+ @StepDef
+ ############################
+ #---------------------------
+ #Step to click cancel button
+ #---------------------------
+ Scenario:I click fund cancel button
+   And I scroll to top of page
+    And I click fund cancel button
+
+
+@StepDef
+############################################################
+#-----------------------------------------------------------
+#Step verify each parameter of fund on fund grid
+#Example:And I verify for fund "FundAbc" Code is "Code12345"
+#-----------------------------------------------------------
+Scenario:I verify for fund "<fundName>" <property> is "<data>"
+ And result is defined by javascript
+  """
+  (function getResult(){
+    var result,colId;
+  $('.ag-header-container .ag-header-cell span:contains("$<property>")').parents().filter(function(){if($(this).attr('col-id')!=null){colId=$(this).attr('col-id')}})
+   $('.ag-body-viewport [role="row"]').each(function(){
+     if($(this).find("div[col-id='name']").text().trim()=="$<fundName>")
+          if($(this).find("div[col-id='"+colId+"']").text().trim() == "$<data>")
+        result = "Done";
+
+  })
+    return result;
+  })()
+  """
+  And result should be "Done"
+
+
+@StepDef
+##########################################################
+#---------------------------------------------------------
+#Step for get selected accounts of edit fund
+#Example:And I get selected accounts for fund "HPF Fund"
+#---------------------------------------------------------
+Scenario: I get selected accounts for fund "<fundName>"
+  And fund name input field should be "$<fundName>"
+  And dataInToSelector is defined by javascript
+  """
+  (function(){
+      var accounts='';
+      $('multi-select div div:nth-child(3) select option').each(function(){
+        accounts=accounts+$(this).text()+' ';
+      });
+      accounts=accounts.trim().replace(/ /g,",");
+    return accounts;
+  })()
+  """
+  And selectedData is "${dataInToSelector}"
+
+@StepDef
+@DataTable(header="top")
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to create fund
+#Example:
+#And I edit attributes of fund
+#    |fundName|fundCode|fundEmail            |fundDescription|fundAddress | accounts|
+#    |fund008|code0008|test0008@test0008.com|description1   |addresss0008| '' |
+#    |fund009|code0009|test0009@test0009.com|description1   |addresss0009| HDFGBPAC1|
+#    |fund010|code0010|test00010@test0010.com|description1   |addresss0010| HGFSGDAC2,HDFAEDAC2,HPFGBPAC2|
+#----------------------------------------------------------------------------------------------------------
+Scenario: I edit attributes of fund
+  And I edit fund with "${data[fundName]}" "${data[fundCode]}" "${data[fundEmail]}" "${data[fundDescription]}" "${data[fundAddress]}" "${data[accounts]}" "${data[deselectAccount]}" "${data[group]}" for each data record
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to select multiple accounts and submit the form and verify fund got created
+#Example:
+#And I select "<accounts>" from account selector and submit the form then verify fund "${fundName}" got created
+#   Where <accounts> is "account1,account2,account3"
+#----------------------------------------------------------------------------------------------------------
+Scenario: I edit fund with "<fundName>" "<fundCode>" "<fundEmail>" "<fundDescription>" "<fundAddress>" "<accounts>" "<deselectAccount>" "<fundGroup>"
+  When I navigate to fund page of fund "${fundName}"
+  And I get selected accounts for fund "${fundName}"
+  And I enter fundname "$<fundName>"
+  And I enter fundcode "$<fundCode>"
+  And I enter fundEmail "$<fundEmail>"
+  And I enter fundDescription "$<fundDescription>"
+  And I enter fundAddress "$<fundAddress>"
+  And I enter fundGroup "$<fundGroup>"
+  And accountIs is "$<accounts>"
+  And value is present is defined by javascript "(function() {return "$<accounts>" != "''"})();"
+  And I select "${selectaccount}" in account selector from for each selectaccount in accountIs delimited by "," if value is present
+  And I click account add one button if value is present
+  And accountToRemove is "$<deselectAccount>"
+  And deselectValue is present is defined by javascript "(function() {return "$<deselectAccount>" != "''"})();"
+  And I select "${deselectAccount}" in account selector to for each deselectAccount in accountToRemove delimited by "," if deselectValue is present
+  And I click account remove one button if deselectValue is present
+   And I scroll to top of page
+  And I click fund save button
+  And alert box title should be "Fund updated"
+  And alert box message should be "Fund was updated successfully."
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+  And I wait until "(function(){return $('.toast-message').is(':visible')!=true })()"
+  And I wait for fund edit button
+  And I navigate to fund page
+  And I enter fund filter "Name:=${fundName}"
+  And I verify fund "${fundName}" is present on fund page
+  And I verify for fund "${fundName}" Code is "${fundCode}"
+  And I verify for fund "${fundName}" Description is "${fundDescription}"
+  And I verify for fund "${fundName}" Address is "${fundAddress}"
+  And I verify for fund "${fundName}" Email Address is "${fundEmail}"
+  And selectedAccounts is defined by javascript
+  """
+  (function(){
+    var temp="${selectedData}".concat(',').concat("$<accounts>");
+    var accountsArray=temp.split(",");
+    var accountsSortedArray=accountsArray.sort();
+    var accounts=accountsSortedArray.toString()
+    //return accounts.replace(/,/g,", ");
+    return accounts;
+  })()
+  """
+  Then I verify for fund "${fundName}" Accounts is "${selectedAccounts}" if value is present
+  Then I verify Account "${deselectAccount}" is not present for fund "${fundName}" for each deselectAccount in accountToRemove delimited by "," if deselectValue is present
+  And I remove fund filter "Name:${fundName}"
+
+@StepDef
+#####################################################################
+#--------------------------------------------------------------------
+#Step to verify create fund with duplicate name
+#--------------------------------------------------------------------
+Scenario: I create fund with duplicate name with code "<fundCode>"
+    And I click create fund
+    And I enter "${fundName}" in fund name input field
+    And I enter fundcode "$<fundCode>"
+    And I enter fundEmail "${fundEmail}"
+    And I enter fundDescription "${fundDescription}"
+    And I enter fundAddress "${fundAddress}"
+    And email is "${fundEmail}"
+    And I click fund create button
+    And alert box message should be "Fund was created successfully."
+    And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+    And I click notification dialog if dialogExist
+    And I wait until "(function(){return $('.toast-message').is(':visible')!=true })()"
+
+
+ @StepDef
+ #############################################
+ #--------------------------------------------
+ #Step to verify create fund form input fields
+ #--------------------------------------------
+ Scenario:I verify create fund form
+   And I scroll to top of page
+    And I click create fund
+    And fund form should be displayed
+    And I click fund create button
+    And I verify fund name is mandatory
+    And I verify fund code is mandatory
+    And I verify fund email is mandatory
+    ##NA##And I verify fund address is mandatory
+
+ @StepDef
+ @DataTable(header="top")
+ ###################################################
+ #--------------------------------------------------
+ #Step to Verify length of input fields on fund form
+ #Example:
+ #  And I verify length of input fields
+ #  | element  | text    |message   |
+ #  | name     | abcde   |Message is|
+ #--------------------------------------------------
+ Scenario: I verify length of input fields
+   And I enter "${data[text]}" in fund ${data[element]} input field for each data record
+   And I verify length warning is ${data[message]} for ${data[element]} for each data record
+
+ @StepDef
+ ############################################################
+ #-----------------------------------------------------------
+ #Step to Verify length of input fields on fund form
+ #Example:And I verify length warning is "message" for "name"
+ #-----------------------------------------------------------
+ Scenario: I verify length warning is <message> for <inputField>
+   When fund form should be displayed
+   Then exceeding character limit message for fund $<inputField> should be "$<message>"
+
+ @StepDef
+ @DataTable(header="top")
+ ################################################
+ #-----------------------------------------------
+ #Step to Verify error message for invalid email
+ #Example:
+ #   And I verify invalid email
+ #   | element|text    |message    |
+ #   | email  | abcden |message is |
+ #-----------------------------------------------
+ Scenario: I verify invalid email
+    And my gwen.web.wait.seconds property is "1"
+    And I verify error message for invalid "${data[text]}" "${data[element]}" for each data record
+
+@StepDef
+#####################################################################
+#--------------------------------------------------------------------
+#Step to Verify error message for invalid email
+#Example: And I verify error message for invalid "email" "dfdfsdfdsf"
+#--------------------------------------------------------------------
+Scenario: I verify error message for invalid "<element>" "<mail>"
+  And I enter "$<element>" in fund $<mail> input field
+  And invalidEmailText is defined by javascript "(function(){return $('#stl-inputfund-email-edit').parent().parent().children(':first-child').next().next().next().text().trim()})()"
+  Then invalidEmailText should be "${data[message]}"
+
+ @StepDef
+ @DataTable(header="top")
+ ################################################
+ #-----------------------------------------------
+ #Step to Verify for valid email
+ #Example:
+ #   And I verify valid email address
+ #   | element|text    |message    |
+ #   | email  | abcden |message is |
+ #-----------------------------------------------
+ Scenario: I verify valid email address
+   And I verify valid "${data[text]}" "${data[element]}" for each data record
+
+@StepDef
+#####################################################################
+#--------------------------------------------------------------------
+#Step to Verify valid email
+#Example: And I verify error message for invalid "email" "dfdfsdfdsf"
+#--------------------------------------------------------------------
+Scenario: I verify valid "<element>" "<mail>"
+   And I enter "$<element>" in fund $<mail> input field
+   Then invalid email message for fund email should not be displayed
+
+ @StepDef
+ #############################################
+ #--------------------------------------------
+ #Verifies fund page mandatory fields
+ #Example: And I verify fund name is mandatory
+ #--------------------------------------------
+ Scenario: I verify fund <inputField> is mandatory
+   When fund form should be displayed
+   Then fund $<inputField> mandatory message should be "${fund $<inputField> error message}"
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#verifies can not use already used account to create new fund
+#Example: And I verify can not use already used account "HDFUSDAC2" to create new fund
+#--------------------------------------------------------------------------------------
+Scenario: I verify can not use already used account "<accountIs>" to create new fund
+ When I open create fund form
+ And result is defined by javascript
+ """
+ (function getResult(){
+   var result;var found=false;
+   $('multi-select div div:nth-child(1) select option').each(function(index)
+          { if($(this).text().trim().indexOf("$<accountIs>") < 0) {console.log("asda"+$(this).text().trim());result = "Done"} else { console.log("failed"+$(this).text().trim()); result = ""; return false}})
+   return result;
+ })()
+ """
+ And result should be "Done"
+ And I navigate to fund page
+
+
+   @StepDef
+ ############################################################
+ #-----------------------------------------------------------
+ #Step verify each parameter of fund on fund grid
+ #Example:And I verify Account "Code12345" is not present for fund "FundAbc"
+ #-----------------------------------------------------------
+ Scenario:I verify <property> "<data>" is not present for <name> "<fundName>"
+  And result is defined by javascript
+   """
+   (function getResult(){
+      var result,colId;
+      $('.ag-header-container .ag-header-cell span:contains("$<property>")').parents().filter(function(){if($(this).attr('col-id')!=null){colId=$(this).attr('col-id')}})
+      $('.ag-body-viewport [role="row"]').each(function(){
+       if($(this).find("div[col-id='name']").text().trim()=="$<fundName>")
+            if($(this).find("div[col-id='"+colId+"']").text().trim().indexOf("$<data>") < 0)
+          result = "Done";
+      })
+      return result;
+    })()
+   """
+   And result should be "Done"
+
+
+ @StepDef
+ #####################################################################
+ #--------------------------------------------------------------------
+ #Step to verify create fund with duplicate name
+ #--------------------------------------------------------------------
+ Scenario: I create fund with duplicate fund code
+    And I click create fund
+    And I enter "${fundName}" in fund name input field
+    And I enter fundcode "${fundCode}"
+    And I enter fundEmail "${fundEmail}"
+    And I enter fundDescription "${fundDescription}"
+    And I enter fundAddress "${fundAddress}"
+    And I click fund create button
+    And alert box message should be "Failure 1: Caused by: A fund with code ${fundCode} already exists"
+    And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+    And I click notification dialog if dialogExist
+    And I wait until "(function(){return $('.toast-message').is(':visible')!=true })()"
+    And I navigate to fund page
+    And email is "${fundEmail}"
+
+
+ @StepDef
+ @DataTable(header="top")
+ ###########################################################################################################
+ #----------------------------------------------------------------------------------------------------------
+ #Step to verify fund
+ #Example:
+ #And I verify fund details
+ #    |fundName|fundCode|fundEmail            |fundDescription|fundAddress | accounts|
+ #    |fund008|code0008|test0008@test0008.com|description1   |addresss0008| '' |
+ #    |fund009|code0009|test0009@test0009.com|description1   |addresss0009| HDFGBPAC1|
+ #    |fund010|code0010|test00010@test0010.com|description1   |addresss0010| HGFSGDAC2,HDFAEDAC2,HPFGBPAC2|
+ #----------------------------------------------------------------------------------------------------------
+ Scenario: I verify fund details
+   And I verify fund with "${data[fundName]}" "${data[fundCode]}" "${data[fundEmail]}" "${data[fundDescription]}" "${data[fundAddress]}" "${data[accounts]}" "${data[group]}" is present for each data record
+
+ @StepDef
+ ###########################################################################################################
+ #----------------------------------------------------------------------------------------------------------
+ #Step to verify fund
+ #Example:
+ #And  I verify fund with "<fundName>" "<fundCode>" "<fundEmail>" "<fundDescription>" "<fundAddress>" "<accounts>" is present
+ #   Where <accounts> is "account1,account2,account3"
+ #----------------------------------------------------------------------------------------------------------
+ Scenario: I verify fund with "<fundName>" "<fundCode>" "<fundEmail>" "<fundDescription>" "<fundAddress>" "<accounts>" "<fundGroup>" is present
+   And accountIs is "$<accounts>"
+   And value is present is defined by javascript "(function() {return "$<accounts>" != "''"})();"
+   And I enter fund filter "Name:$<fundName>"
+   And I verify fund "$<fundName>" is present on fund page
+   And I verify for fund "$<fundName>" Code is "$<fundCode>"
+   And description is present is defined by javascript "(function() {return "$<fundDescription>" != "''"})();"
+   And I verify for fund "$<fundName>" Description is "$<fundDescription>" if description is present
+   And description is absent is defined by javascript "(function() {return "$<fundDescription>" == "''"})();"
+   And I verify for fund "$<fundName>" Description is "" if description is absent
+   And I verify for fund "$<fundName>" Address is "$<fundAddress>"
+   And defaultMailIsPresent is defined by javascript "(function() {return "$<fundEmail>" == "''"})();"
+   And emailId is defined by sql "SELECT EMAIL_ADDRESS FROM CMS_REF_FUND_AUD WHERE NAME = '$<fundName>'" in the ${dbName} database
+   And I verify for fund "$<fundName>" Email Address is "${emailId}" if defaultMailIsPresent
+   And defaultMailIsNotPresent is defined by javascript "(function() {return "$<fundEmail>" != "''"})();"
+   And I verify for fund "$<fundName>" Email Address is "$<fundEmail>" if defaultMailIsNotPresent
+   And default is present is defined by javascript "(function() {return "$<fundGroup>" == "''"})();"
+   And I verify for fund "$<fundName>" Group is "Default Group" if default is present
+   And group is present is defined by javascript "(function() {return "$<fundGroup>" != "''"})();"
+   And I verify for fund "$<fundName>" Group is "$<fundGroup>" if group is present
+   And actionedBy is defined by sql "SELECT ACTIONED_BY FROM CMS_REF_FUND_AUD WHERE NAME = '$<fundName>' ORDER BY ID DESC" in the ${dbName} database
+   And I verify for fund "$<fundName>" Actioned By is "${actionedBy}"
+   And value is present is defined by javascript "(function() {return "$<accounts>" != "''"})();"
+   ##WA##And selectedAccounts is defined by javascript "(function(){return "$<accounts>".replace(/,/g,", ");})()"
+   And selectedAccounts is defined by javascript "(function(){return "$<accounts>";})()"
+   Then I verify for fund "$<fundName>" Accounts is "${selectedAccounts}" if value is present
+   And I remove fund filter "Name:$<fundName>"
+
+
+@StepDef
+@DataTable(header="top")
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify fund
+#Example:
+#And I verify fund details
+#    |fundName|fundCode|fundEmail            |fundDescription|fundAddress | accounts|
+#    |fund008|code0008|test0008@test0008.com|description1   |addresss0008| '' |
+#    |fund009|code0009|test0009@test0009.com|description1   |addresss0009| HDFGBPAC1|
+#    |fund010|code0010|test00010@test0010.com|description1   |addresss0010| HGFSGDAC2,HDFAEDAC2,HPFGBPAC2|
+#----------------------------------------------------------------------------------------------------------
+Scenario: I audit fund details
+  And I audit fund with "${data[fundName]}" "${data[fundCode]}" "${data[fundEmail]}" "${data[fundDescription]}" "${data[fundAddress]}" "${data[accounts]}" "${data[group]}" is present for each data record
+  And I navigate to fund page
+
+@StepDef
+Scenario: I open fund version history
+    And I execute javascript "window.scrollTo(0, 1000);"
+    And I execute javascript "$('.ibox.float-e-margins.animated.ng-scope i.fa-angle-down').click()"
+    And I wait for fundVersionGrid text
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify fund
+#Example:
+#And  I verify fund with "<fundName>" "<fundCode>" "<fundEmail>" "<fundDescription>" "<fundAddress>" "<accounts>" is present
+#   Where <accounts> is "account1,account2,account3"
+#----------------------------------------------------------------------------------------------------------
+Scenario: I audit fund with "<fundName>" "<fundCode>" "<fundEmail>" "<fundDescription>" "<fundAddress>" "<accounts>" "<group>" is present
+  And accountIs is "$<accounts>"
+  And value is present is defined by javascript "(function() {return "$<accounts>" != "''"})();"
+  And I enter fund filter "Name:$<fundName>"
+  And I verify fund "$<fundName>" is present on fund page
+  And I verify for fund "$<fundName>" Code is "$<fundCode>"
+  And description is present is defined by javascript "(function() {return "$<fundDescription>" != "''"})();"
+  And I verify for fund "$<fundName>" Description is "$<fundDescription>" if description is present
+  And description is absent is defined by javascript "(function() {return "$<fundDescription>" == "''"})();"
+  And I verify for fund "$<fundName>" Description is "" if description is absent
+  And I verify for fund "$<fundName>" Address is "$<fundAddress>"
+  And I verify for fund "$<fundName>" Email Address is "$<fundEmail>"
+  And I verify for fund "$<fundName>" Group is "$<group>"
+  And actionedBy is defined by sql "SELECT ACTIONED_BY FROM CMS_REF_FUND_AUD WHERE NAME = '$<fundName>' ORDER BY ID DESC" in the ${dbName} database
+  And I verify for fund "$<fundName>" Actioned By is "${actionedBy}"
+  ##NA##And actionedTime is defined by sql "SELECT ACTIONED_DATETIME FROM CMS_REF_FUND_AUD WHERE NAME = '$<fundName>'" in the ${dbName} database
+  ##NA##And I verify for fund "$<fundName>" Actioned Datetime is "${actionedTime}"
+  And value is present is defined by javascript "(function() {return "$<accounts>" != "''"})();"
+  ##WA##And selectedAccounts is defined by javascript "(function(){return "$<accounts>".replace(/,/g,", ");})()"
+  And selectedAccounts is defined by javascript "(function(){return "$<accounts>";})()"
+  Then I verify for fund "$<fundName>" Accounts is "${selectedAccounts}" if value is present
+  And versionId is defined by sql "select listagg( REV, ',') within group (order by REV ) from CMS_REF_FUND_AUD WHERE NAME='$<fundName>' AND EMAIL_ADDRESS='$<fundEmail>' AND ADDRESS = '$<fundAddress>'" in the ${dbName} database
+  And version is "${versionId}"
+  And I verify for fund "$<fundName>" Version is "${versionDetail}" for each versionDetail in version delimited by ","
+  And I remove fund filter "Name:$<fundName>"
+
+  @StepDef
+  ####################################################
+  #---------------------------------------------------
+  #Step to enter fund description
+  #Example:And  I enter fundGroup "fundGroup1"
+  #---------------------------------------------------
+  Scenario:I enter fundGroup "<fundGroup>"
+    And value is present is defined by javascript "(function() {return "$<fundGroup>" != "''"})();"
+    And fundGroup is "$<fundGroup>" if value is present
+    And I select "${fundGroup}" in fund group selector if value is present
+
+@StepDef
+@DataTable(header="top")
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verifies load cashflow
+#----------------------------------------------------------------------------------------
+Scenario:I load fund
+Given I load fund "${data[fileName]}" for each data record
+ And I refresh the current page
+ And I wait for page to load
+
+
+@StepDef
+Scenario:I load fund "<fileName>"
+  And I execute system process "cmd /c cd ..\..\..\Utilities\Pipe\Artifacts && QueueSender.bat ${activemq.ip} ${activemq.port} "Execute" "${messageSenderAppDir}/HSS/script/copyFileToFromDir.sh $<fileName>" "LOADCASHFLOWS" "
+  And I wait 5 seconds
+
+@StepDef
+@DataTable(header="top")
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verifies load account
+#----------------------------------------------------------------------------------------
+Scenario:I load account
+  Given I load account "${data[fileName]}" for each data record
+
+@StepDef
+Scenario:I load account "<fileName>"
+  And I execute system process "cmd /c cd ..\..\..\Utilities\Pipe\Artifacts && QueueSender.bat ${activemq.ip} ${activemq.port} "Execute" "${messageSenderAppDir}/HSS/script/copyFileToFromDir.sh $<fileName>" "LOADCASHFLOWS" "
+  And I wait 3 seconds
+
+
+@StepDef
+##############################################################
+#-------------------------------------------------------------
+#Step to extract fund csv
+#Example:And I extract fund csv for "<testcaseNo>"
+#-------------------------------------------------------------
+Scenario: I extract fund csv for "<testcaseNo>"
+  And I scroll to top of page
+  And I wait for first row of fundGrid
+  And I right click first row of fundGrid
+  And I wait for export button
+  And I click export button
+  And export to csv button should be displayed
+  And export to excel button should be displayed
+  And dropdownList is defined by javascript "(function(){return $('.ag-menu').length})()"
+  And dropdownList should be "2"
+  And I wait for export to csv button
+  And I click export to csv button
+  And I save file using "," as delimiter with sort on "none" for "$<testcaseNo>"
+  And I compare result for "$<testcaseNo>"
+  And testcaseIs is "$<testcaseNo>:''"
+  And I verify testresult of testcasesno "${testcaseNoIs}" for each testcaseNoIs in testcaseIs delimited by ":"
+
+
+ @StepDef
+ ###############################################
+ #----------------------------------------------
+ #Step to verify version history
+ #----------------------------------------------
+ Scenario: I verify version history for "<testcaseNo>"
+   And I execute javascript "z=[]"
+ 	And the result is defined by javascript
+  """
+  (function setTimeout () {
+	var rowCount = $('#funds-history-grid [class="ui-grid-render-container ng-isolate-scope ui-grid-render-container-body"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]').length;
+	var columnCount = $('#funds-history-grid [class="ui-grid-render-container ng-isolate-scope ui-grid-render-container-body"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child(1) [ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid"]').length;
+	 y = [];failedNegativeCheck=[];
+	var headerCount = $('#funds-history-grid [class="left ui-grid-render-container-left ui-grid-render-container ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] ').length;
+	 x = [];
+		for (i = 1; i <=1; i++) {
+    $('#funds-history-grid [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div >div > span:nth-child('+i+')').each(function (index) {
+		   if($( this ).text() != " " ) {x.push($( this ).text().trim()); }
+		});
+		}
+		y.push(x);
+
+		for (i = 1; i <= rowCount; i++) {
+				x = [];
+				for(k = 1; k<= headerCount; k++) {
+				$('#funds-history-grid [class="left ui-grid-render-container-left ui-grid-render-container ui-grid-render-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+i+') [ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid"]:nth-child('+k+') P').each(function (index) {
+				x.push($( this ).text().trim());
+				});
+				};
+				for(j = 1; j<= columnCount; j++) {
+				$('#funds-history-grid .ui-grid-contents-wrapper [class="ui-grid-render-container ng-isolate-scope ui-grid-render-container-body"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+i+') [ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid"]:nth-child('+j+')').each(function (index) {
+				if($( this ).text() == '    ') {
+						x.push("");
+					}
+					else {
+						x.push($( this ).text().trim());
+						}
+			});
+			};
+      lastColumn = y[0][y[0].length-1];
+      $('#funds-history-grid [ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.uid"] [ng-click="grid.appScope.onCellClick(grid.getCellValue(row, col) , row, col, $event)"]').each(function (index) { if ($( this ).text().trim().indexOf("-") >= 0) {
+       if ($( this ).css('color') != "rgb(255, 0, 0)") {
+            failedNegativeCheck.push($( this ).text().trim())
+                }
+           }
+      });
+      document.querySelector('#funds-history-grid .ui-grid-render-container-body [ng-repeat="col in colContainer.renderedColumns track by col.uid"]:nth-last-child(1)').scrollIntoView(false);
+		 y.push(x);
+		result = "Done";
+	};
+  z.push(y);
+	return result;
+	})();
+  """
+  Then the result should be "Done"
+  And I verify execution results for "$<testcaseNo>"
+
+
+@StepDef
+###############################################
+#----------------------------------------------
+#Step to verify version history
+#----------------------------------------------
+Scenario: I verify fund version history csv for "<testcaseNo>"
+  And I scroll to top of page
+  And I wait for first row of fundVersionHistoryGrid
+  And I right click first row of fundVersionHistoryGrid
+  And I wait for export button
+  And I click export button
+  And export to csv button should be displayed
+  And export to excel button should be displayed
+  And dropdownList is defined by javascript "(function(){return $('.ag-menu').length})()"
+  And dropdownList should be "2"
+  And I wait for export to csv button
+  And I click export to csv button
+  And I save file using "," as delimiter with sort on "none" for "$<testcaseNo>"
+  And I compare result for "$<testcaseNo>"
+  And testcaseIs is "$<testcaseNo>:''"
+  And I verify testresult of testcasesno "${testcaseNoIs}" for each testcaseNoIs in testcaseIs delimited by ":"
+
+@StepDef
+#####################################################################
+#--------------------------------------------------------------------
+#Step to navigate to fund page
+#Example:And I navigate to fund page
+#--------------------------------------------------------------------
+Scenario:I navigate to fund page
+  And I execute javascript "$('#sliderChart li:eq(1) a').click()"
+  And I wait for create fund
+  And I wait for page to load
+
+
+@StepDef
+@DataTable(header="top")
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to edit create fund
+#Example:
+#And I edit group of fund
+#    |fundName|fundgroup|
+#    |fund008|group1|
+#----------------------------------------------------------------------------------------------------------
+Scenario: I edit group of fund
+  And I edit group fund "${data[fundName]}" to "${data[group]}" for each data record
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to edit group fund
+#Example:
+#And I edit group fund
+#----------------------------------------------------------------------------------------------------------
+Scenario: I edit group fund "<fundName>" to "<fundGroup>"
+  When I navigate to fund page of fund "$<fundName>"
+  And I enter fundGroup "$<fundGroup>"
+  And I scroll to top of page
+  And I click fund save button
+  And alert box title should be "Fund updated"
+  And alert box message should be "Fund was updated successfully."
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+  And I wait until "(function(){return $('.toast-message').is(':visible')!=true })()"
+  And I wait for fund edit button
+  And I navigate to fund page
+  And I enter fund filter "Name:$<fundName>"
+  And I verify fund "$<fundName>" is present on fund page
+  And I remove fund filter "Name:$<fundName>"
+
+
+@StepDef
+@DataTable(header="top")
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to edit create fund
+#Example:
+#And I edit code of fund
+#    |fundName|fundCode|
+#    |fund008|group1|
+#----------------------------------------------------------------------------------------------------------
+Scenario: I edit code of fund
+  And I edit code fund "${data[fundName]}" to "${data[code]}" for each data record
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to edit code fund
+#Example:
+#And I edit code fund
+#----------------------------------------------------------------------------------------------------------
+Scenario: I edit code fund "<fundName>" to "<fundCode>"
+  When I navigate to fund page of fund "$<fundName>"
+  And I enter fundcode "$<fundCode>"
+  And I scroll to top of page
+  And I click fund save button
+  And alert box title should be "Fund updated"
+  And alert box message should be "Fund was updated successfully."
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+  And I wait until "(function(){return $('.toast-message').is(':visible')!=true })()"
+  And I wait for fund edit button
+  And I navigate to fund page
+  And I enter fund filter "Name:$<fundName>"
+  And I verify fund "$<fundName>" is present on fund page
+  And I remove fund filter "Name:$<fundName>"
+
+
+  @StepDef
+  @DataTable(header="top")
+  ###########################################################################################################
+  #----------------------------------------------------------------------------------------------------------
+  #Step to edit create fund
+  #Example:
+  #And I edit group of fund
+  #    |fundName|description|
+  #    |fund008|group1|
+  #----------------------------------------------------------------------------------------------------------
+  Scenario: I edit description of fund
+    And I edit description of fund "${data[fundName]}" to "${data[description]}" for each data record
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to edit group fund
+#Example:
+#And I edit description fund
+#----------------------------------------------------------------------------------------------------------
+Scenario: I edit description of fund "<fundName>" to "<fundDescription>"
+  When I navigate to fund page of fund "$<fundName>"
+  And I enter fundDescription "$<fundDescription>"
+  And I scroll to top of page
+  And I click fund save button
+  And alert box title should be "Fund updated"
+  And alert box message should be "Fund was updated successfully."
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+  And I wait until "(function(){return $('.toast-message').is(':visible')!=true })()"
+  And I wait for fund edit button
+  And I navigate to fund page
+  And I enter fund filter "Name:$<fundName>"
+  And I verify fund "$<fundName>" is present on fund page
+  And I remove fund filter "Name:$<fundName>"
+
+
+  @StepDef
+  ###########################################################################################################
+  #----------------------------------------------------------------------------------------------------------
+  #Step to verify filtering in create fund
+  #Example:
+  #And I verify "AUTOACC1,AUTOACC2,AUTOACC3" accounts can be selected
+  #----------------------------------------------------------------------------------------------------------
+  Scenario: I verify "<accounts>" accounts can be selected
+     And I open create fund form
+     And accountIs is "$<accounts>"
+     And value is present is defined by javascript "(function() {return "$<accounts>" != "''"})();"
+     And I select account "${selectaccount}" for each selectaccount in accountIs delimited by "," if value is present
+     And I capture the current screenshot
+     And I click fund cancel button
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify adding one by one account in create fund
+#Example:
+#And I select account "AUTOACC1"
+#----------------------------------------------------------------------------------------------------------
+ Scenario: I select account "<selectaccount>"
+  And I select "$<selectaccount>" in account selector from
+  And I click account add one button
+  And I verify "$<selectaccount>" is selected
+
+@StepDef
+############################################################
+#-----------------------------------------------------------
+#Step to account is selected
+#Example:And I verify "ACCACCOUNT1" is selected
+#-----------------------------------------------------------
+Scenario:I verify "<selectaccount>" is selected
+  And result is defined by javascript
+  """
+  (function getResult(){
+    var result="";
+    $('multi-select div div:nth-child(3) select option').each(function(){
+      if(($(this).text().trim()) == "$<selectaccount>")
+        result="Done";
+    });
+    return result;
+  })()
+  """
+  And result should be "Done"
+  And result is defined by javascript
+  """
+  (function getResult(){
+    var result="";
+    if($('multi-select div div:nth-child(1) select option').get(0)==null)
+      result="Done";
+      $('multi-select div div:nth-child(1) select option').each(function(){
+      if(($(this).text().trim()) != "$<selectaccount>")
+        result="Done";
+      else{result="";return false;}
+    });
+    return result;
+  })()
+  """
+  And result should be "Done"
+
+@StepDef
+############################################################
+#-----------------------------------------------------------
+#Step to verify account is selected
+#Example:And I verify "HDF1" is removed
+#-----------------------------------------------------------
+Scenario:I verify "<selectaccount>" is removed
+    And result is defined by javascript
+    """
+    (function getResult(){
+      var result="";
+        $('multi-select div div:nth-child(1) select option').each(function(){
+        if(($(this).text().trim()) == "$<selectaccount>")
+          result="Done";
+      });
+      return result;
+    })()
+    """
+    And result should be "Done"
+    And result is defined by javascript
+    """
+    (function getResult(){
+      var result="";
+      if($('multi-select div div:nth-child(3) select option').get(0)==null)
+        result="Done";
+        $('multi-select div div:nth-child(3) select option').each(function(){
+        if(($(this).text().trim()) != "$<selectaccount>"){
+          result="Done";
+          }else{result="";return false;}
+      });
+      return result;
+    })()
+    """
+    And result should be "Done"
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify account selection in create fund with filtering
+#Example:
+#And I select accounts "AUTOACC01,AUTOACC02,AUTOACC03" by applying "AUTO" on account filter
+#----------------------------------------------------------------------------------------------------------
+Scenario:I select accounts "<accounts>" by applying "<filteraccounts>" on account filter
+  And I open create fund form
+  And I apply filter "$<filteraccounts>" on accounts
+  And accountIs is "$<accounts>"
+  And value is present is defined by javascript "(function() {return "$<accounts>" != "''"})();"
+  And I select account "${selectaccount}" for each selectaccount in accountIs delimited by "," if value is present
+  And I capture the current screenshot
+
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to select and verify filtering in create fund form
+#Example:
+#And I apply filter "HSSACC#$" on accounts
+#----------------------------------------------------------------------------------------------------------
+  Scenario: I apply filter "<filteraccounts>" on accounts
+  And accountIs is "$<filteraccounts>"
+  And value is present is defined by javascript "(function() {return "$<filteraccounts>" != "''"})();"
+  And I enter account filter "${filteraccount}" for each filteraccount in accountIs delimited by "," if value is present
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify account filter in create fund form
+#Example:
+#And I enter account filter "AUTOACC1"
+#----------------------------------------------------------------------------------------------------------
+ Scenario: I enter account filter "<filteraccount>"
+  And I type "$<filteraccount>" in create form account filter from field
+  And filtered is defined by javascript
+  """
+  (function(){
+    str="";
+    $('multi-select div div:nth-child(1) select option').each(function()
+  {
+    if($(this).text().trim().indexOf("$<filteraccount>") >= 0)
+    		str="done";
+    else{str="";return false;}
+  });
+  return str;
+  })()
+  """
+  Then filtered should be "done"
+  And I capture the current screenshot
+
+
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to remove filter in create fund form
+#Example:
+#And  I remove account filter
+#----------------------------------------------------------------------------------------------------------
+Scenario: I remove account filter
+  And I clear create form account filter from field
+  And options present is defined by javascript
+  """
+  (function(){
+  str="";
+  if($('multi-select div div:nth-child(1) select option').get(0)!=null)
+  		str="done";
+  return str;
+  })()
+  """
+  Then options present should be "done"
+
+
+
+@StepDef
+###########################################################################################################
+#----------------------------------------------------------------------------------------------------------
+#Step to verify select all accounts and remove all  account in create fund form
+#Example:
+#And I verify select all and remove all accounts
+#----------------------------------------------------------------------------------------------------------
+Scenario:I verify select all and remove all accounts
+  And I click account add all button
+  And no options in from is defined by javascript
+  """
+  (function(){
+  str="";
+  if($('multi-select div div:nth-child(1) select option').get(0)==null)
+  		str="done";
+  return str;
+  })()
+  """
+  Then no options in from should be "done"
+  And I capture the current screenshot
+  And I click account remove all button
+  And no options in to is defined by javascript
+  """
+  (function(){
+  str="";
+  if($('multi-select div div:nth-child(3) select option').get(0)==null)
+  		str="done";
+  return str;
+  })()
+  """
+  Then no options in to should be "done"
+  And I capture the current screenshot
+
+@StepDef
+Scenario:I validate account "<accountName>" has account number "<accountNumber>"
+ And accountNumberIs is notnull is defined by javascript "(function() {return "$<accountNumber>" != "NULL"})();"
+ And fetchedCountIs is defined by sql "select count(*) from cms_ref_account_param where NAME = '$<accountName>' AND long_name ='$<accountNumber>' and active_status=1" in the ${dbName} database if accountNumberIs is notnull
+ And fetchedAggCountIs is defined by sql "select count(*) from cms_ref_agg where NAME = '$<accountName>' AND long_name ='$<accountNumber>' and active_status=1" in the ${dbName} database if accountNumberIs is notnull
+ And accountNumberIs is null is defined by javascript "(function() {return "$<accountNumber>" == "NULL"})();"
+ And fetchedCountIs is defined by sql "select count(*) from cms_ref_account_param where NAME = '$<accountName>' and active_status=1 AND long_name IS NULL" in the ${dbName} database if accountNumberIs is null
+ And fetchedAggCountIs is defined by sql "select count(*) from cms_ref_agg where NAME = '$<accountName>' and active_status=1 AND long_name IS NULL" in the ${dbName} database if accountNumberIs is null
+ And fetchedCountIs should be "1"
+ And fetchedAggCountIs should be "1"

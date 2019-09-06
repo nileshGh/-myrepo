@@ -1,0 +1,375 @@
+@load
+Feature: loadingCashFlows Meta
+
+
+@StepDef
+@DataTable(header="top")
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verifies load cashflow
+#----------------------------------------------------------------------------------------
+Scenario:I load cashflow
+Given I load cashflow having details as "${data[fileName]}" "${data[accountNo]}" "${data[referenceNo]}" "${data[ammount]}" "${data[calKey]}" "${data[overallStatus]}" "${data[startingDate]}" for each data record
+
+@StepDef
+Scenario:I load cashflow having details as "<fileName>" "<accountNo>" "<referenceNo>" "<ammount>" "<calKey>" "<overallStatus>" "<startingDate>"
+ And startingDate is "$<startingDate>"
+ And referenceNo is "$<referenceNo>"
+ And I execute system process "cmd /c cd ..\..\..\Utilities\Pipe\Artifacts && QueueSender.bat ${activemq.ip} ${activemq.port} "Execute" "${messageSenderAppDir}/HSS/script/copyFileToFromDir.sh $<fileName>" "LOADCASHFLOWS" "
+ And value is notnull is defined by javascript "(function() {return "$<calKey>" != "NULL"})();"
+ And fetchedCount is defined by sql "select count(*) from cms_bdr_transaction where TRANS_REF_NO='$<referenceNo>' AND account_id='$<accountNo>' AND Amount='$<ammount>' AND OVERALL_STATUS='$<overallStatus>' AND CURRENT_CALC_KEY='$<calKey>'" in the ${dbName} database if value is notnull
+ And value is null is defined by javascript "(function() {return "$<calKey>" == "NULL"})();"
+ And fetchedCount is defined by sql "select count(*) from cms_bdr_transaction where TRANS_REF_NO='$<referenceNo>' AND account_id='$<accountNo>' AND Amount='$<ammount>' AND OVERALL_STATUS='$<overallStatus>' AND CURRENT_CALC_KEY IS NULL" in the ${dbName} database if value is null
+ And fetchedCount should be "1"
+ And I wait 5 seconds
+
+
+@StepDef
+@DataTable(header="top")
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verifies load cashflow
+#----------------------------------------------------------------------------------------
+Scenario:I verify details for below transaction
+  Given I verify details for transaction values "${data[accountNo]}" "${data[referenceNo]}" "${data[ammount]}" "${data[calKey]}" for each data record
+
+@StepDef
+Scenario:I verify details for transaction values "<accountNo>" "<referenceNo>" "<ammount>" "<calKey>"
+  And value is notnull is defined by javascript "(function() {return "$<calKey>" != "NULL"})();"
+  And fetchedCount is defined by sql "select count(*) from cms_bdr_transaction where TRANS_REF_NO='$<referenceNo>' AND account_id='$<accountNo>' AND Amount='$<ammount>' AND CURRENT_CALC_KEY='$<calKey>'" in the ${dbName} database if value is notnull
+  And value is null is defined by javascript "(function() {return "$<calKey>" == "NULL"})();"
+  And fetchedCount is defined by sql "select count(*) from cms_bdr_transaction where TRANS_REF_NO='$<referenceNo>' AND account_id='$<accountNo>' AND Amount='$<ammount>' AND CURRENT_CALC_KEY IS NULL" in the ${dbName} database if value is null
+  And fetchedCount should be "1"
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Trigger EOD For Region
+#Example: And I perform EOD for "NEWAMDREG" region with CBD "2018-03-05" and last EOD execution "2018-03-04"
+#----------------------------------------------------------------------------------------
+Scenario:I perform EOD for "<region>" region with CBD "<cbd>" and last EOD execution "<lastEodExe>"
+  And I execute system process "cmd /c cd ..\..\..\Utilities\Pipe\Artifacts && QueueSender.bat ${activemq.ip} ${activemq.port} "Execute" "${appServerAppDir}/HSS/script/TriggerEODForRegion.sh $<region> $<cbd> $<lastEodExe>" "EODQ" "
+  And date is defined by sql "select current_bus_date from cms_ref_syscontrol where region_name='$<region>'" in the ${dbName} database
+  And checkDate is defined by javascript
+    """
+    (function (){
+      function formatDate(tempDate) {
+       var d = new Date(tempDate),
+           month = '' + (d.getMonth() + 1),
+           day = '' + (d.getDate()+1),
+           year = d.getFullYear().toString();
+         if (month.length < 2)
+            month = '0' + month;
+         if (day.length < 2)
+            day = '0' + day;
+
+         return [year, month, day].join('-');
+       }
+        return formatDate("$<cbd>");
+    })()
+    """
+  And date should be "${checkDate} 00:00:00.0"
+
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Get SQL extract for query and compare it
+#Example: And I get "SELECT * FROM USRR" query export "TC001"
+#----------------------------------------------------------------------------------------
+Scenario:I get "<exportQuery>" query export "<testcaseNo>"
+  And I execute system process "cmd.exe /c cd ${baseDirectory}\..\..\..\Utilities\SqlClient\ && ExportToCSV.bat ${dbType} ${dbHost} ${dbPort} ${dbSid} ${dbUser} ${dbPassw} "$<exportQuery>" ${baseDirectory}\data\${moduleName}\actual $<testcaseNo>"
+  And I execute system process "java -jar ${baseDirectory}\..\..\..\Utilities\JavaExcelComparison\ExcelDiff.jar -csv  "${baseDirectory}data\${moduleName}" "$<testcaseNo>" $<testcaseNo>.xlsx "\|" "-sort=none" "-debug=no""
+  And I compare result for "$<testcaseNo>"
+  And testcaseIs is "$<testcaseNo>:''"
+  And I verify testresult of testcasesno "${testcaseNoIs}" for each testcaseNoIs in testcaseIs delimited by ":"
+
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Update CBD from backend
+#Example: And I update CBD for "NEWAMDREG" region to "2018-03-05"
+#----------------------------------------------------------------------------------------
+Scenario:I update CBD for "<region>" region to "<date>"
+  And updateDate is defined by javascript
+    """
+      (function (){
+        function getLastSunday(year, month) {
+            // Create date for last day in month
+            var d = new Date(year, month, 0);
+            // Adjust to previous Sunday
+            d.setDate(d.getDate() - d.getDay());
+            return d;
+          }
+        if("$<date>".indexOf("SYSDATE")>=0 || "$<date>".indexOf("sysdate")>=0){
+          var now = moment();
+          var dt = new Date();
+          var newDate = moment(dt, "DD/MM/YYYY");
+          now.set(newDate.toObject());
+          var currentTime =now.format("HHmm");
+          var d = d || new Date();
+          var dstS = getLastSunday(d.getFullYear(), 3);
+          var dstE = getLastSunday(d.getFullYear(), 10);
+          dstS = new Date(Date.UTC(dstS.getFullYear(), dstS.getMonth(), dstS.getDate(),1));
+          dstE = new Date(Date.UTC(dstE.getFullYear(), dstE.getMonth(), dstE.getDate(),1));
+          var gmtDifference=530;
+          if (d > dstS && d < dstE) {
+          gmtDifference-=100;
+          }
+          if((currentTime-0000)*(currentTime-gmtDifference) <= 0){
+            return "$<date>+1";
+            }else{
+              return "$<date>";
+            }
+          }else{
+            return "'$<date>'";
+          }
+      })()
+    """
+  And I execute query "UPDATE cms_ref_syscontrol SET current_bus_date=${updateDate}, UI_current_bus_date=${updateDate} where REGION_NAME='$<region>'" to update "1" rows
+
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Execute SQL file on linux machine
+#Example: And I execute sql file "InsertScriptForHolidayCases"
+#----------------------------------------------------------------------------------------
+Scenario:I execute sql file "<fileName>"
+  And I execute system process "cmd /c cd ..\..\..\Utilities\Pipe\Artifacts && QueueSender.bat ${activemq.ip} ${activemq.port} "Execute" "${appServerAppDir}/HSS/script/executeSQLFile.sh $<fileName>" "EODQ" "
+  And I wait 60 seconds
+
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verifies load cashflow
+#----------------------------------------------------------------------------------------
+Scenario:I load messages from "<folderName>"
+  And I execute system process "cmd /c cd ..\..\..\Utilities\Pipe\Artifacts && QueueSender.bat ${activemq.ip} ${activemq.port} "Execute" "${messageSenderAppDir}/HSS/script/copyMessageToFromDir.sh $<folderName>" "LOADCASHFLOWS" "
+  And I wait 60 seconds
+
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verifies load cashflow
+#----------------------------------------------------------------------------------------
+Scenario:I execute script "<scriptName>"
+  And I execute system process "cmd /c cd ..\..\..\Utilities\Pipe\Artifacts && QueueSender.bat ${activemq.ip} ${activemq.port} "Execute" "${messageSenderAppDir}/HSS/script/$<scriptName>.sh" "LOADCASHFLOWS" "
+  And I wait 60 seconds
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Step to verify loading in database
+#Example: And I verify load count in table "cms_bdr_alert" for "fund_code like 'ALERTFND%'" clause to be "3"
+#----------------------------------------------------------------------------------------
+Scenario:I verify load count in table "<tableName>" for "<whereClause>" clause to be "<count>"
+  And loadedCount is defined by sql "select count(*) from $<tableName> where $<whereClause>" in the ${dbName} database
+  And loadedCount should be "$<count>"
+
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Execute SQL query on database
+#Example: And I execute query "" to update "1" rows
+#Example: And I execute query "" to update " " rows (to disable validation)
+#----------------------------------------------------------------------------------------
+Scenario: I execute query "<query>" to update "<noRow>" rows
+And I update the ${dbName} database by sql
+   """
+   $<query>
+   """
+And toValidate is defined by javascript "(function(){return "$<noRow>"!=" "})()"
+Then ${dbName} rows affected should be "$<noRow>" if toValidate
+
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Update Alert Execution Days Backend
+#Example: And I update alert execution days for fund with code "NEWAMD" fund to "5" days
+#----------------------------------------------------------------------------------------
+Scenario:I update alert execution days for fund with code "<fundCode>" to "<days>" days
+  And I execute query "update cms_ref_strategy set execution_days=$<days> where NAME like '%$<fundCode>%'" to update " " rows
+  And I execute query "update cms_ref_alert_config set execution_days=$<days> where CODE like '%$<fundCode>%'" to update " " rows
+
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Step to wait for the message in outDir
+#Example: And I wait for the "RESTART.DONE" message
+#----------------------------------------------------------------------------------------
+Scenario:I wait for the "<fileName>" message
+  And I execute system process "${baseDirectory}\bat\WaitForMessage.bat ${baseDirectory}\outDir $<fileName> MOVE_THEN_RENAME 1200 APPEND_TS ${baseDirectory}\reports"
+
+@StepDef
+Scenario:I load cashflow for transaction with related reference "<transactionReference>" with details "<cashflowDetails>"
+And I execute system process "cmd /c cd ..\..\..\Utilities\Pipe\Artifacts && QueueSender.bat ${activemq.ip} ${activemq.port} "Execute" "${messageSenderAppDir}/HSS/script/CreatecashflowWithRelatedRefNumber.sh $<cashflowDetails>" "LOADCASHFLOWS" "
+And I wait 60 seconds
+
+
+@StepDef
+Scenario:I load cashflow for transaction "<transactionReference>" with details "<cashflowDetails>"
+And I execute system process "cmd /c cd ..\..\..\Utilities\Pipe\Artifacts && QueueSender.bat ${activemq.ip} ${activemq.port} "Execute" "${messageSenderAppDir}/HSS/script/Createcashflow.sh $<cashflowDetails>" "LOADCASHFLOWS" "
+And I wait 60 seconds
+
+
+@StepDef
+Scenario:I load cashflows "<cashflowDetails>"
+And I execute system process "cmd /c cd ..\..\..\Utilities\Pipe\Artifacts && QueueSender.bat ${activemq.ip} ${activemq.port} "Execute" "${messageSenderAppDir}/HSS/script/LoadCashFlowsFromDirectory.sh $<cashflowDetails>" "LOADCASHFLOWS" "
+
+@StepDef
+@DataTable(header="top")
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verifies load account
+#----------------------------------------------------------------------------------------
+Scenario:I load fxRates
+  Given I load fxRates "${data[fileName]}" for each data record
+
+@StepDef
+Scenario:I load fxRates "<fileName>"
+  And I execute system process "cmd /c cd ..\..\..\Utilities\Pipe\Artifacts && QueueSender.bat ${activemq.ip} ${activemq.port} "Execute" "${messageSenderAppDir}/HSS/script/copyFileToFromDir.sh $<fileName>" "LOADCASHFLOWS" "
+  And I wait 3 seconds
+
+@StepDef
+Scenario: I verify archieving of old fx rates
+And I update the ${dbName} database by sql "update cms_bdr_fx_rate set FX_RATE_DATE='06-FEB-01' WHERE FX_FROM_CCY='USD' AND FX_TO_CCY='AUD' AND FX_ACTIVE_STATUS=2"
+And lineCount is defined by sql "select count(*) from cms_bdr_fx_rate where FX_FROM_CCY='USD' AND FX_TO_CCY='AUD' AND FX_ACTIVE_STATUS=2 and FX_RATE_DATE='06-FEB-01'" in the ${dbName} database
+And lineCount should be "1"
+And I load account "AUD_USD_fxRate_2"
+And lineCount is defined by sql "select count(*) from cms_bdr_fx_rate where FX_FROM_CCY='USD' AND FX_TO_CCY='AUD' AND FX_ACTIVE_STATUS=2 and FX_RATE_DATE='06-FEB-01'" in the ${dbName} database
+And lineCount should be "0"
+
+@StepDef
+Scenario:I delete fx rates
+And I update the ${dbName} database by sql "delete from cms_bdr_fx_rate"
+
+@StepDef
+@DataTable(header="top")
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Change account type
+#Example:And I change account type
+#|accountName|currency|bank   |accountRegion|holidayID|legalEntity   |accountType|
+#|FND17AEDC2 |AED     |BANKAED|FUND17REGION |NoHol    |HSSLEGALENTITY|NOSTRO     |
+#|FND17AEDC2 |AED     |BANKAED|FUND17REGION |NoHol    |HSSLEGALENTITY|NON FUNDED |
+#----------------------------------------------------------------------------------------
+Scenario:I change account type
+  And I change account type for account "${data[accountName]}" having currency "${data[currency]}" and "${data[bank]}" bank in region "${data[accountRegion]}" with holiday ID "${data[holidayID]}" and legal entity "${data[legalEntity]}" to type "${data[accountType]}" for each data record
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Change account type and verify
+#----------------------------------------------------------------------------------------
+Scenario: I change account type for account "<accountName>" having currency "<currency>" and "<bank>" bank in region "<accountRegion>" with holiday ID "<holidayID>" and legal entity "<legalEntity>" to type "<accountType>"
+  And I get accountTypeID for "$<accountType>" in "accountTypeID" variable
+  And I execute system process "cmd /c cd ..\..\..\Utilities\Pipe\Artifacts && QueueSender.bat ${activemq.ip} ${activemq.port} "Execute" "${appServerAppDir}/HSS/script/ChangeAccountType.sh $<accountName> ${accountTypeID} $<currency> $<bank> $<accountRegion> $<holidayID> $<legalEntity>" "EODQ" "
+  And I wait 90 seconds
+  And actualAccountTypeID is defined by sql "select trim(ACC_TYPE) from cms_ref_account_param where name='$<accountName>' and active_status=1" in the ${dbName} database
+  And actualAccountTypeID should be "${accountTypeID}"
+
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Update CBD from backend
+#Example: And I update account type for "FND17SGDC1" as "FUNDED"
+#----------------------------------------------------------------------------------------
+Scenario:I update account type for "<accountName>" as "<accountType>"
+  And I get accountTypeID for "$<accountType>" in "accountTypeID" variable
+  And I execute query "update cms_ref_account_param set acc_type=${accountTypeID} where name='$<accountName>'" to update " " rows
+
+
+@StepDef
+#-------------------------------------------------------------
+#Step to change timezone of the system
+#Example:And I change timezone of the system to "India Standard Time"
+#-------------------------------------------------------------
+Scenario:I change timezone of the system to "<timezone>"
+         And I execute system process
+          """
+          tzutil /s "$<timezone>"
+          """
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Change account type
+#Example:And I can not modify "Currency" of account "FND17CADC1" from "JPY" to "BGD"
+#Example:And I can not modify "Bank" of account "FND17CADC1" from "BANKJPY" to "BANKBGD"
+#Example:And I can not modify "AccountTypeID" of account "FND17CADC1" from "BANKJPY" to "BANKBGD"
+#----------------------------------------------------------------------------------------
+Scenario:I can not modify "<parameter>" of account "<accountName>" from "<oldValue>" to "<newValue>"
+  And changeCurrency is defined by javascript "(function(){return ("$<parameter>"=="Currency")})()"
+  And changeBank is defined by javascript "(function(){return ("$<parameter>"=="Bank")})()"
+  And changeAccountType is defined by javascript "(function(){return ("$<parameter>"=="AccountType")})()"
+  And valueToChange is "$<newValue>"
+  And I get accountTypeID for "$<newValue>" in "valueToChange" variable if changeAccountType
+  And I change "$<parameter>" for "$<accountName>" account to "${valueToChange}" 
+  And previousValue is "$<oldValue>"
+  And I get accountTypeID for "$<oldValue>" in "previousValue" variable if changeAccountType
+  And I verify "$<parameter>" of account "$<accountName>" is "${previousValue}"
+  
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Get Account Type
+#Example:And I get accountTypeID for "AccountTypeID" in "valueToChange" variable 
+#----------------------------------------------------------------------------------------
+Scenario: I get accountTypeID for "<accountType>" in "<variableName>" variable
+  And $<variableName> is defined by javascript
+    """
+      (function(){
+        var accountTypeId="";
+        if("$<accountType>"=="NON FUNDED"){
+          accountTypeId=4;
+        }else if("$<accountType>"=="NOSTRO"){
+          accountTypeId=1;
+        }else if("$<accountType>"=="VOSTRO"){
+          accountTypeId=2;
+        }else{
+          accountTypeId=0;
+        }
+      return accountTypeId;
+      })()
+    """ 
+    And gwen is "${$<variableName>}"
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Change account type to new value
+#Example:And I change "Bank" for "FND17CADC1" account to "BGD"
+#----------------------------------------------------------------------------------------
+Scenario: I change "<parameter>" for "<accountName>" account to "<newValue>"
+  And actualCurrency is defined by sql "select trim(CURRENCY) from cms_ref_account_param where name='$<accountName>' and active_status=1" in the ${dbName} database
+  And actualBank is defined by sql "select trim(agent_bank_ident) from cms_ref_bank_param where bank_group_id = (select trim(bank_group_id) from cms_ref_account_param where name='$<accountName>' and active_status=1)" in the ${dbName} database
+  And actualAccountRegion is defined by sql "select trim(region_name) from cms_ref_account_param where name='$<accountName>' and active_status=1" in the ${dbName} database
+  And actualHolidayId is defined by sql "select trim(holiday_id) from cms_ref_account_param where name='$<accountName>' and active_status=1" in the ${dbName} database
+  And actualLegalEntity is defined by sql "select trim(extra_ref4) from cms_ref_account_param where name='$<accountName>' and active_status=1" in the ${dbName} database
+  And actualAccountType is defined by sql "select trim(acc_type) from cms_ref_account_param where name='$<accountName>' and active_status=1" in the ${dbName} database
+  And actual$<parameter> is "$<newValue>"
+  And I execute system process "cmd /c cd ..\..\..\Utilities\Pipe\Artifacts && QueueSender.bat ${activemq.ip} ${activemq.port} "Execute" "${appServerAppDir}/HSS/script/ChangeAccountType.sh $<accountName> ${actualAccountType} ${actualCurrency} ${actualBank} ${actualAccountRegion} ${actualHolidayId} ${actualLegalEntity}" "EODQ" "
+  And I wait 60 seconds
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verify value of bank after changing
+#Example:And I verify bank "Bank" of account "FND17CADC1" is "BANKAED"
+#----------------------------------------------------------------------------------------
+Scenario: I verify "<parameter>" of account "<accountName>" is "<value>"
+ And verifyBank is defined by javascript "(function(){return ("$<parameter>"=="Bank")})()"
+  And verifyCurrency is defined by javascript "(function(){return ("$<parameter>"=="Currency")})()"
+  And verifyAccountType is defined by javascript "(function(){return ("$<parameter>"=="AccountType")})()"
+  And originalValue is defined by sql "select trim(agent_bank_ident) from cms_ref_bank_param where bank_group_id = (select trim(bank_group_id) from cms_ref_account_param where name='$<accountName>' and active_status=1)" in the ${dbName} database if verifyBank
+  And originalValue is defined by sql "select trim(CURRENCY) from cms_ref_account_param where name='$<accountName>' and active_status=1" in the ${dbName} database if verifyCurrency
+  And originalValue is defined by sql "select trim(ACC_TYPE) from cms_ref_account_param where name='$<accountName>' and active_status=1" in the ${dbName} database if verifyAccountType
+  And originalValue should be "$<value>" 

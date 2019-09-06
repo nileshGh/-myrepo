@@ -1,0 +1,75 @@
+@tlmviewDashBoard
+Feature: tlmviewDashBoard
+
+@StepDef
+Scenario:I go to "<dashboard>"
+  Given I navigate to module tlmViewDashBoard
+  And dashboardNameIs can be located by javascript "(function() {var board;$('[class="name-and-date"] b').each(function(){ if($(this).text()==="$<dashboard>") {board=$(this)}}) ; return board})()"
+  And I click dashboardNameIs
+
+@StepDef
+Scenario: I verify user can not access of sweep dashboard
+  And access is defined by javascript "(function() { return $('#analyticsLander [href="#/dashboardselector"]').length==0})()"
+  And access should be "true"
+
+  @StepDef
+  Scenario:  I cancel sweep having sweepId "<sweepId>"
+  And On "CMS Sweep" dashboard in "Sweep Record Sweep ID" column I right click to select "Store" on "$<sweepId>"
+  And I select an option "Add Row" from context menu
+  And I select an option "To New Group" from context menu
+  And I click cancelSweep
+  And I wait for confirmButton text
+  And I click confirmButton
+
+
+  @StepDef
+  Scenario: I cancel sweep having <Value Date> "<date>" <From Account Code> "<fromAccntCode>" <To Account Code> "<toaccountCode>" on "<dashboardName>"
+  #And I apply column level filter columnname "$<Value Date>" as value "$<date>" in "$<dashboardName>"
+  And I apply column level filter columnname "$<From Account Code>" as value "$<fromAccntCode>" in "$<dashboardName>"
+  And I apply column level filter columnname "$<To Account Code>" as value "$<toaccountCode>" in "$<dashboardName>"
+  And On "$<dashboardName>" dashboard in "$<From Account Code>" column I right click to select "Store" on "$<fromAccntCode>"
+  And I select an option "Add Row" from context menu
+  And I select an option "To New Group" from context menu
+  And I click cancelSweep
+  And I wait for confirmButton text
+  And I click confirmButton
+  And I wait 5 seconds
+
+@StepDef
+Scenario:I get transaction reference number for account "<accountId>" having value date "<valuedate>" amount "<amount>" and source system id "<systemid>"
+	And transactionReference is defined by sql "select trans_ref_no from cms_bdr_transaction where account_id='$<accountId>' and value_date='$<valuedate>' and amount='$<amount>' and SOURCE_SYSTEM_ID='$<systemid>' and trade_type not in ('CXL','REP')" in the ${dbName} database
+	And transRef is defined by javascript "(function(){ return "${transactionReference}".split('-')[0]})()"
+	And transactionReferenceNumber is "${transRef}"
+	And relatedReference is defined by sql "select related_reference from cms_bdr_transaction where account_id='$<accountId>' and value_date='$<valuedate>' and amount='$<amount>' and SOURCE_SYSTEM_ID='$<systemid>' and trade_type not in ('CXL','REP')" in the ${dbName} database
+	And reletedRef is defined by javascript "(function(){ return "${relatedReference}".split('-')[0]})()"
+	And relatedReferenceNumber is "${reletedRef}"
+
+ @StepDef
+ Scenario:I open "<dashboard>" in editable format
+   Given I navigate to module tlmViewDashBoard
+   And dashboardEditBtn can be located by css selector "[id*="btnEditDashboard$<dashboard>"]"
+   And I click dashboardEditBtn
+
+@StepDef
+@DataTable(header="top")
+Scenario: I verify extra columns in dataSourceTab
+    And I open "SweepDashboard" in editable format
+    And I click sideBar
+    And I click cmsSweepDashBoardHeader
+    And I click dataSourceTab
+    And I verify "${data[columnName]}" is present in dataSourceTab for each data record
+
+ @StepDef
+ Scenario:I verify "<dashboard>" is present in dataSourceTab
+   And datatabName can be located by javascript "$('[ng-repeat="attribute in filteredAttributes | limitTo : attributeLimit"] div:contains("$<dashboard>")')"
+   And datatabName should be displayed
+
+   @StepDef
+   Scenario:I leave edit sweep dashboard page without save
+      And I click homeDashBoardBtn
+      And I click confirmRemoveFavoriteButton
+
+@StepDef
+Scenario:I get transaction reference number for fromaccountcode "<accountId>" having value date "<valuedate>" amount "<amount>" and toaccountCode "<systemid>"
+     And transactionReference is defined by sql "select trans_ref_no from cms_bdr_transaction where account_id='$<accountId>' and value_date='$<valuedate>' and amount='$<amount>' and SOURCE_SYSTEM_ID='$<systemid>' and trade_type not in ('CXL','REP')" in the ${dbName} database
+     And reference is "${transactionReference}"

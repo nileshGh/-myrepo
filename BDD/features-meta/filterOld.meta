@@ -1,0 +1,183 @@
+@filter
+Feature: Filter old meta
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to filter fund
+#Example:  I enter fund filter "<filter>"
+#-----------------------------------------------------------------
+Scenario: I enter fund filter "<filter>"
+  And applyFilter is "$<filter>"
+  And filterName is defined by javascript
+  """
+  (function getFilterName() {
+    arrayIs = "${applyFilter}".split(':');
+    return arrayIs[0];
+  })()
+  """
+  And filterNameIs is "${filterName}"
+  And definedValue is defined by javascript
+  """
+  (function getFilterName() {
+    arrayIs = "${applyFilter}".split(':');
+    return arrayIs[1];
+  })()
+  """
+  And filterValueIs is "${definedValue}"
+  And fundFilter can be located by javascript "$('#funds-grid [ng-repeat="col in colContainer.renderedColumns track by col.uid"]:contains("${filterNameIs}") stl-ui-grid-filter-popup').get(0)"
+  And fundValue is present is defined by javascript "(function() {return "${filterNameIs}" != "''"})();"
+  And I click fundFilter if fundValue is present
+  And setFundFilterInputField can be located by javascript "$('#funds-grid [ng-repeat="col in colContainer.renderedColumns track by col.uid"]:contains("${filterNameIs}") [ng-model="filterValue"]').get(0)"
+  And I type "${filterValueIs} " in setFundFilterInputField if fundValue is present
+  And I press enter in setFundFilterInputField if fundValue is present
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to remove fund filter
+#Example: I remove fund filter
+#-----------------------------------------------------------------
+Scenario: I remove fund filter "<filter>"
+  And applyFilter is "$<filter>"
+  And filterName is defined by javascript
+  """
+  (function getFilterName() {
+    arrayIs = "${applyFilter}".split(':');
+    return arrayIs[0];
+  })()
+  """
+  And filterNameIs is "${filterName}"
+  And definedValue is defined by javascript
+  """
+  (function getFilterName() {
+    arrayIs = "${applyFilter}".split(':');
+    return arrayIs[1];
+  })()
+  """
+  And filterValueIs is "${definedValue}"
+  And filterValueIs is "${definedValue}"
+  And fundFilter can be located by javascript "$('#funds-grid [ng-repeat="col in colContainer.renderedColumns track by col.uid"]:contains("${filterNameIs}") stl-ui-grid-filter-popup').get(0)"
+  And removeColumnfilter can be located by javascript "$('#funds-grid [ng-repeat="col in colContainer.renderedColumns track by col.uid"]:contains("${filterNameIs}") stl-ui-grid-filter-popup i').get(0)"
+  And I scroll to the bottom of removeColumnfilter
+  And I click removeColumnfilter
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to filter strategy
+#Example:  I enter strategy filter "<filter>"
+#-----------------------------------------------------------------
+Scenario: I enter strategy filter "<filter>"
+  And applyFilter is "$<filter>"
+  And filterName is defined by javascript
+  """
+  (function getFilterName() {
+    arrayIs = "${applyFilter}".split(':');
+    return arrayIs[0];
+  })()
+  """
+  And filterNameIs is "${filterName}"
+  And definedValue is defined by javascript
+  """
+  (function getFilterName() {
+    arrayIs = "${applyFilter}".split(':');
+    return arrayIs[1];
+  })()
+  """
+  And filterValueIs is "${definedValue}"
+  And fundFilter can be located by javascript "$('#strategies-grid [ng-repeat="col in colContainer.renderedColumns track by col.uid"]:contains("${filterNameIs}") stl-ui-grid-filter-popup').get(0)"
+  And fundValue is present is defined by javascript "(function() {return "${filterNameIs}" != "''"})();"
+  And I click fundFilter if fundValue is present
+  And setStrategyFilterInputField can be located by javascript "$('#strategies-grid [ng-repeat="col in colContainer.renderedColumns track by col.uid"]:contains("${filterNameIs}") [ng-model="filterValue"]').get(0)"
+  And I type "${filterValueIs} " in setStrategyFilterInputField if fundValue is present
+  And I press enter in setStrategyFilterInputField if fundValue is present
+
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to filter fund
+#Example:  I enter fund history filter "<filter>"
+#-----------------------------------------------------------------
+Scenario: I enter fund history filter "<filter>"
+  And applyFilter is "$<filter>"
+  And filterName is defined by javascript
+  """
+  (function getFilterName() {
+    arrayIs = "${applyFilter}".split(':');
+    return arrayIs[0];
+  })()
+  """
+  And filterNameIs is "${filterName}"
+  And definedValue is defined by javascript
+  """
+  (function getFilterName() {
+    return arrayIs[1];
+  })()
+  """
+  And filterValueIs is "${definedValue}"
+  And fundFilter can be located by javascript "$('#funds-history-grid [ng-repeat="col in colContainer.renderedColumns track by col.uid"]:contains("${filterNameIs}") stl-ui-grid-filter-popup').get(0)"
+  And fundValue is present is defined by javascript "(function() {return "${filterNameIs}" != "''"})();"
+  And I click fundFilter if fundValue is present
+  And setFundFilterInputField can be located by javascript "$('#funds-history-grid [ng-repeat="col in colContainer.renderedColumns track by col.uid"]:contains("${filterNameIs}") [ng-model="filterValue"]').get(0)"
+  And I type "${filterValueIs} " in setFundFilterInputField if fundValue is present
+  And I wait 2 seconds if fundValue is present
+  And I send "BACK_SPACE" to setFundFilterInputField if fundValue is present
+  And I press enter in setFundFilterInputField if fundValue is present
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#sort ascending
+#--------------------------------------------------------------------------------------
+Scenario: I sort ascending "<columnName>"
+  And columnName is "$<columnName>"
+  And multipleGrouping is defined by javascript "(function() {return "${columnName}".indexOf(',')>0})();"
+  And I execute javascript "priorityCount=0"
+  And I perform sort ascending action on "${columnNameTo}" for each columnNameTo in columnName delimited by ","
+  And I verify priority count of "${columnNameTo}" for each columnNameTo in columnName delimited by "," if multipleGrouping
+
+@StepDef
+Scenario: I perform sort ascending action on "<perspective>"
+  And I execute javascript "$('[ng-repeat="col in colContainer.renderedColumns track by col.uid"]:contains("$<perspective>") .ui-grid-icon-angle-down').click()"
+  And I click sort ascending
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#sort descending
+#--------------------------------------------------------------------------------------
+Scenario: I sort descending "<columnName>"
+  And columnName is "$<columnName>"
+  And multipleGrouping is defined by javascript "(function() {return "${columnName}".indexOf(',')>0})();"
+  And I perform sort descending action on "${columnNameTo}" for each columnNameTo in columnName delimited by ","
+
+@StepDef
+Scenario: I perform sort descending action on "<perspective>"
+  And I execute javascript "$('[ng-repeat="col in colContainer.renderedColumns track by col.uid"]:contains("$<perspective>") .ui-grid-icon-angle-down').click()"
+  And I click sort descending
+
+
+@StepDef
+Scenario: I verify priority count of "<columnName>"
+  And counter is defined by javascript "(function() {return ++priorityCount})()" if multipleGrouping
+  And priorityCounter can be located by javascript "$('[ng-repeat="col in colContainer.renderedColumns track by col.uid"]:contains("$<columnName>") sub').get(0)"
+  And priorityCounter should be "${counter}" if multipleGrouping
+
+@StepDef
+Scenario: I perform remove sort action on "<perspective>"
+  And I execute javascript "$('[ng-repeat="col in colContainer.renderedColumns track by col.uid"]:contains("$<perspective>") .ui-grid-icon-angle-down').click()"
+  And I click remove sort
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Sets grouping
+#--------------------------------------------------------------------------------------
+Scenario: I remove sort on "<columnName>"
+  And columnName is "$<columnName>"
+  And multipleGrouping is defined by javascript "(function() {return "${columnName}".indexOf(',')>0})();"
+  And I perform remove sort action on "${columnNameTo}" for each columnNameTo in columnName delimited by ","

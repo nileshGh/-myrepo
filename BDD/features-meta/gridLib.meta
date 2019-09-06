@@ -1,0 +1,1435 @@
+@gridlib
+Feature: Grid Lib.
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Performs Grid title operations like Refresh, Clear Filter, Show Filter, Maximize/Minimize.
+# EXAMPLE : And I perform "Load/Refresh Data" operation on "Reconciliations Status Summary"
+# EXAMPLE : And I perform "Show custom search panel" operation on "Reconciliations Status Summary"
+# EXAMPLE : And I perform "Hide custom search panel" operation on "Reconciliations Status Summary"
+# EXAMPLE : And I perform "Clear all filters" operation on "Reconciliations Status Summary"
+# EXAMPLE : And I perform "Hide filters" operation on "Reconciliations Status Summary"
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: I perform "<grid_title_operation>" operation on "<gridname>"
+Given I wait for "$<gridname>" grid to appear
+And I click grid
+And grid title heading can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<gridname>'])[1]/ancestor::div[contains(@id, 'widget_slot_row') or @id='fullScreenWidget']"
+And grid title operation can be located by xpath ".//*[@uib-tooltip='$<grid_title_operation>']/span" in grid title heading
+And I scroll to the bottom of grid title operation
+And I move to grid title operation
+#And I wait for grid title operation
+#And I scroll to the bottom of grid title operation
+#And I wait 1 second
+#And I move to grid title heading
+#And I wait for grid title operation
+#And grid title operation should be displayed
+Then I click grid title operation
+# below is to move focus and click on title/header, otherwise tooltip-popup blocks subsequent operation
+And I click grid title heading
+And I wait for page to load
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Navigates/Drill-downs to given treepath on a tree grid and performs required operation on it (example : "Drill Down", "Remove All Drill Downs", "Expand All", "Collapse All" etc)
+# It requires data table to be passed to drill down to a give  tree path
+# EXAMPLE :
+#	  And On "Reconciliations Status Summary" dashboard in "Category/Status/Type/Proof Status" column I right click to select "Remove All Drill Downs"
+#		| Expand | KATEST | Loading | Nostro | Balanced |
+# For nested context menu clicks; scenario eg: "Color theme for Status" --> "light blue"
+# Note: Could not find any elegant solution for this scenario; so as of now have kept it simple; till we find one.
+# EXAMPLE :
+#		And On "Reconciliations Status Summary" dashboard in "Category/Status/Type/Proof Status" column I right click to select "Color theme for Status"
+#		| Expand | KATEST | Loading |
+#		And I select an option "light-blue" from context menu
+# 	And On "Reconciliations Status Summary" dashboard in "Category/Status/Type/Proof Status" column I right click to select "Drill Down" for
+# 	| Expand | MATCH | Loading |
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+@DataTable(header="left")
+Scenario: On "<treegridname>" dashboard in "<column_name>" column I right click to select "<contextmenuoption>" for
+# Collapse all groups
+And On "$<treegridname>" dashboard in "$<column_name>" column I right click to select2 "Expand/Collapse" followed-by "Collapse All Groups" on "${data[1][Expand]}"
+And I wait for "$<treegridname>" grid to appear
+# Expand required tree nodes
+And I expand/collapse treenode "${data[Expand]}" on "$<treegridname>" column "$<column_name>" for each data record
+# ${Last node open} used below is defined in above step
+And Last node open is "${data[Expand]}" for each data record
+And gridcell is defined by "$<column_name>" as "${Last node open}" in "$<treegridname>"
+And I wait for gridcell text
+And I right click gridcell
+And I select an option "$<contextmenuoption>" from context menu
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Performs required context menu option selection on grid cell. This can be used for tree, but
+# for trees you may require to drill down a treepath for which use  Scenario: I perform "<contextmenuoption>" operation on "<column_name>" in treegrid "<treegridname>"
+# EXAMPLE : And On "Reconciliations" dashboard in "Status" column I right click to select "Add to New Group in Store" on "Loading"
+# For nested context menu clicks; scenario eg: "Remove Columns" --> "Last Action Date"
+# Note: Could not find any elegant solution for this scenario; so as of now have kept it simple; till we find one.
+# Example
+# 	And On "Reconciliations" dashboard in "Status" column I right click to select "Remove Columns" on "Loading"
+# 	And I select an option "Last Action Date" from context menu
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: On "<gridname>" dashboard in "<column_name>" column I right click to select "<contextmenuoption>" on "<cellvalue>"
+And gridcell is defined by "$<column_name>" as "$<cellvalue>" in "$<gridname>"
+
+#Kevin:
+And I wait for gridcell
+And I right click gridcell
+And I wait for rightClickMenu text
+And I select an option "$<contextmenuoption>" from context menu
+And I wait for "$<gridname>" grid to appear
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Performs required 3 multi-context menu option selection on grid cell. This can be used for tree, but
+# for trees you may require to drill down a treepath for which use  Scenario: I perform "<contextmenuoption>" operation on "<column_name>" in treegrid "<treegridname>"
+# EXAMPLE : And On "Reconciliations" dashboard in "Status" column I right click to select3 "Context menu option1" followed-by "Context menu option2" followed-by "Context menu option3" on "Loading"
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: On "<gridname>" dashboard in "<column_name>" column I right click to select3 "<contextmenuoption>" followed-by "<contextmenuoption2>" followed-by "<contextmenuoption3>" on "<cellvalue>"
+And gridcell is defined by "$<column_name>" as "$<cellvalue>" in "$<gridname>"
+
+#Kevin
+And I wait for gridcell
+
+And I move to gridcell
+And I right click gridcell
+# mouse move to contextmenuoption
+And context menu element can be located by xpath "//text()[normalize-space(.)='$<contextmenuoption>']/ancestor::div[@ng-repeat='option in contextMenuOptions']/i[contains(@class, 'show-sub-menu')]"
+And I move to context menu element
+# mouse click on to contextmenuoption2
+And context menu element can be located by xpath "//text()[normalize-space(.)='$<contextmenuoption2>']/parent::div[contains(@class, 'option-name')]"
+And I move to context menu element
+# mouse click on to contextmenuoption3
+And context menu element can be located by xpath "//text()[normalize-space(.)='$<contextmenuoption3>']/parent::div[contains(@class, 'option-name')]"
+And I scroll to the bottom of context menu element
+And I click context menu element
+
+#########################################################################################################################
+# Configures grid for a given widget identified by its title
+#########################################################################################################################
+@StepDef
+Scenario: I configure grid for widget with title "<gridname>"
+And I wait for "$<gridname>" grid to appear
+And grid widget config menu can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<gridname>'])[1]/ancestor::div[@class='total-heading']//*[@uib-tooltip='Click to Show Widget Configuration Menu.']"
+And I scroll to the bottom of grid widget config menu
+And I click grid widget config menu
+And grid chart config is inactive is defined by javascript
+"""
+(()=>{
+	var inactiveBtnChart = document.evaluate("//*[contains(@id,'btnCharts-Grid') and not(contains(@class, 'active'))]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+	return (inactiveBtnChart != null)
+})();
+"""
+And grid chart config can be located by xpath "//*[contains(@id,'btnCharts-Grid')]"
+And I click grid chart config if grid chart config is inactive
+And I wait for "$<gridname>" grid to appear if grid chart config is inactive
+And I move to user profile
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Drill down wrapper added to avoid changes of context menu option across testcases
+# EXAMPLE : And   On "Reconciliations" dashboard in "Reconciliation" column I select "BLTITEMMATCH CASH DOUBLE ENTRY"
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: On "<gridname>" dashboard in "<column_name>" column I select "<cellvalue>"
+And gridcell is defined by "$<column_name>" as "$<cellvalue>" in "$<gridname>"
+And I right click gridcell
+And I select an option "Select" from context menu
+And I wait for "$<gridname>" grid to appear
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Drill down wrapper added to avoid changes of context menu option across testcases
+# EXAMPLE : And On "Reconciliations" dashboard in "Category/Status" column I select for
+#               | Expand | LIFECYCLE | Manual Matching |
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+@DataTable(header="left")
+Scenario: On "<treegridname>" dashboard in "<column_name>" column I select for
+# Collapse all groups
+And On "$<treegridname>" dashboard in "$<column_name>" column I right click to select2 "Expand/Collapse" followed-by "Collapse All Groups" on "${data[1][Expand]}"
+And I wait for "$<treegridname>" grid to appear
+# Expand required tree nodes
+And I expand/collapse treenode "${data[Expand]}" on "$<treegridname>" column "$<column_name>" for each data record
+# ${Last node open} used below is defined in above step
+And Last node open is "${data[Expand]}" for each data record
+And gridcell is defined by "$<column_name>" as "${Last node open}" in "$<treegridname>"
+And I wait for gridcell text
+And I right click gridcell
+And I select an option "Select" from context menu
+And I wait for "$<treegridname>" grid to appear
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Adds to new store
+# Example : On "Reconciliations" dashboard in "Reconciliation" column I add to new group on "BLTCREATEPIT CASH DOUBLE ENTRY"
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: On "<gridname>" dashboard in "<column_name>" column I add to new group on "<cellvalue>"
+And gridcell is defined by "$<column_name>" as "$<cellvalue>" in "$<gridname>"
+And I LEFT_SHIFT click gridcell
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Performs required 2 multi-context menu option selection on grid cell. This can be used for tree, but
+# for trees you may require to drill down a treepath for which use  Scenario: I perform "<contextmenuoption>" operation on "<column_name>" in treegrid "<treegridname>"
+# EXAMPLE : And On "Reconciliations" dashboard in "Status" column I right click to select2 "Add Loading Group" followed-by "To New Group" on "Loading"
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: On "<gridname>" dashboard in "<column_name>" column I right click to select2 "<contextmenuoption>" followed-by "<contextmenuoption2>" on "<cellvalue>"
+And gridcell is defined by "$<column_name>" as "$<cellvalue>" in "$<gridname>"
+#kevin
+And I wait for gridcell
+And I move to gridcell
+And I wait 1 second
+And I right click gridcell
+# mouse move to contextmenuoption
+And context menu element can be located by xpath "//text()[normalize-space(.)='$<contextmenuoption>']/ancestor::div[@ng-repeat='option in contextMenuOptions']/i[contains(@class, 'show-sub-menu')]"
+And I move to context menu element
+# mouse click on to contextmenuoption2
+#And context menu element can be located by xpath "//text()[normalize-space(.)='$<contextmenuoption2>']/parent::div[contains(@class, 'option-name')]"
+#And I click context menu element
+And I execute javascript "document.evaluate("//text()[normalize-space(.)='$<contextmenuoption2>']/parent::div[contains(@class, 'option-name')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue.click()"
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# And I apply column level filters on "Reconciliations"
+#	| Attribute			| Operator  		| Value  					|
+#	| Category  		| Equals  			| MATCH 					|
+#	| Status  			| Equals  			| Reconciled 			|
+#########################################################################################################################
+@StepDef
+@DataTable(header="top")
+Scenario: I apply column level filters on "<gridname>"
+# Click filter button
+Given I wait for "$<gridname>" grid to appear
+And I click grid
+And grid title heading can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<gridname>'])[1]/ancestor::div[@class='total-heading']"
+And filter element can be located by xpath ".//*[contains(@id,'btnFilterwidget_')]" in grid title heading
+And I scroll to the bottom of filter element
+And I move to filter element
+Given value is true is defined by javascript
+"""
+(()=>{
+	var showFilters = document.evaluate(".//*[contains(text(), 'Show Filters')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+	return (showFilters != null)
+})();
+"""
+When I click filter element if value is true
+# Show filters if not shown
+And show filters can be located by xpath ".//*[contains(text(), 'Show Filters')]"
+Given value is true is defined by javascript
+"""
+(()=>{
+	var showFilters = document.evaluate(".//*[contains(text(), 'Show Filters') and @class='sub-option']", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+	return (showFilters != null)
+})();
+"""
+And I click show filters if value is true
+# Clear existing filters if already applied
+And value is true is defined by javascript
+"""
+(()=>{
+	var clearFilters = document.evaluate(".//*[contains(text(), 'Clear Filters') and contains(@class, 'sub-option')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+	return (clearFilters != null)
+})();
+"""
+And clear filters can be located by xpath ".//*[contains(text(), 'Clear Filters')]"
+And I click clear filters if value is true
+And I wait for grid text
+# Apply filters on individual columns
+And I apply column level filter columnname "${data[Attribute]}" as value "${data[Value]}" in "$<gridname>" for each data record
+And I wait for grid text
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Example : And I apply column level filter for
+@StepDef
+Scenario: I apply column level filter columnname "<columnName>" as value "<value>" in "<gridname>"
+# scroll to the column
+Given columncell is defined by "$<columnName>" in "$<gridname>"
+And I wait for columncell
+And I scroll to the bottom of columncell
+# apply filter
+#Given column filter can be located by xpath "//*[contains(@class, 'ui-grid-header-cell-label') and normalize-space(text())='$<columnName>']/ancestor::*[@role='columnheader']//stl-data-grid-filter//input" in grid
+#And I click column filter
+And column filter can be located by javascript
+"""
+(function(){
+	 var gridElm=document.evaluate("//*[@id='pnlStoreGrid']//*[normalize-space(.)='$<gridname>']/ancestor::*[@id='pnlStoreGrid']", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+	 if (gridElm == null) // its not a store grid
+		gridElm=document.evaluate("//*[contains(@id,'btnEditWidgetNamewidget') and normalize-space(.)='$<gridname>']/ancestor::stl-dashboard-widget-slot", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+	 var colElm="";
+	 $(gridElm).find(".ui-grid-header-cell-label:visible").each(function(){
+		if($(this).text().trim()=="$<columnName>")
+			colElm = $(this).closest("[role='columnheader']").find('stl-data-grid-filter input').get(0);
+	 })
+	 return colElm;
+})();
+"""
+And I click column filter
+When I enter "$<value>" in column filter
+##WA##And I press enter in column filter
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Custom search filter on grid/treegrid
+# EXAMPLE :
+#	And I apply custom search filter on "Reconciliations Status Summary"
+#	| Attribute			| Operator  		| Value  					|
+#	| Category  		| Equals  			| MATCH 					|
+#	| Status  			| Equals  			| Reconciled 			|
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+@DataTable(header="top")
+Scenario: I apply custom search filter on "<gridname>"
+Given I wait for "$<gridname>" grid to appear
+And search panel is not displayed is defined by javascript
+"""
+		(()=>{
+		//fetch the grid container
+		//var gridContainer = document.evaluate("(//div[@class='the-text']//text()[.='$<gridname>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+		var gridContainer = document.evaluate("(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<gridname>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+		//fetch the custom search text box inside the container
+		var searchPanel = gridContainer.querySelectorAll("[id*='txtWidgetSearch']");
+		// return whether custom search is not visible as true/false
+		return (searchPanel.length === 0);
+		})();
+"""
+Then I perform "Show custom search panel" operation on "$<gridname>" while search panel is not displayed using 1 second delay and 30 second timeout
+Given fire custom search button can be located by css selector "[id*='btnFireQuery'] div" in grid
+And clear custom search button can be located by css selector "[class*='clear-search']" in grid
+And clear custom search button is enabled is defined by javascript
+"""
+		(()=>{
+		//fetch grid object for given title
+		//var gridContainer = document.evaluate("(//div[@class='the-text']//text()[.='$<gridname>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+		var gridContainer = document.evaluate("(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<gridname>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+		//fetch clear search button in grid
+		clearSearch = gridContainer.querySelectorAll("[class='clear-search']");
+		// return whether its enabled as true/false
+		return (clearSearch.length != 0);
+		})();
+"""
+And grid title heading can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<gridname>'])[1]/ancestor::div[@class='total-heading']"
+And I move to grid title heading
+#And clear custom search button should be displayed
+#Then I click clear custom search button while clear custom search button is enabled
+Then I execute javascript "clearSearch[0].click();" while clear custom search button is enabled
+And I wait for "$<gridname>" grid to appear
+And I apply filter "${data[Attribute]}" "${data[Operator]}" "${data[Value]}" in "$<gridname>" for each data record
+# above step adds 'and' word after each condition in loop. below removes last added 'and'
+And the custom search textbox can be located by css selector "[id*='txtWidgetSearch'] input" in grid
+And I send "BACK_SPACE" to the custom search textbox
+And I send "BACK_SPACE" to the custom search textbox
+And I wait for fire custom search button
+And I move to fire custom search button
+And I click fire custom search button
+And I wait for "$<gridname>" grid to appear
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Applies filter on custom search panel. This is just a wrapper for set of steps required in for-each step above; since GWEN requires a single step name in for each
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: I apply filter "<operand>" "<operator>" "<value>" in "<gridname>"
+Given I wait for "$<gridname>" grid to appear
+And the custom search textbox can be located by css selector "[id*='txtWidgetSearch'] input" in grid
+# Type operand
+Then I type "$<operand>" in the custom search textbox
+And I select option "$<operand>" in dropdown list
+# Move mouse over grid
+And I move to grid title heading
+# Type operator
+Then I type "$<operator>" in the custom search textbox
+And I press enter in the custom search textbox
+# Type value
+Then I type "$<value>" in the custom search textbox
+And I select option "$<value>" in dropdown list
+Then I type "And" in the custom search textbox
+# Press enter
+And I press enter in the custom search textbox
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Clicks on a given treenode; which will either expand/collapse the treenode depending on its current state
+# EXAMPLE :
+# And I expand/collapse treenode "Active" on "Exceptions Status Summary" column "Status/Type"
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: I expand/collapse treenode "<treenodename>" on "<treegridname>" column "<column_name>"
+And gridcell is defined by "$<column_name>" as "$<treenodename>" in "$<treegridname>"
+And I click gridcell
+And Last node open is "$<treenodename>"
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# initialised columncell object for given column
+# Example :
+# And columncell is defined by "Status" in "Items Matches Session Status"
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: columncell is defined by "<column_name>" in "<gridname>"
+And columncell can be located by javascript
+"""
+(function() {
+		//fetch grid object
+		//var gridObject = document.evaluate("(//div[contains(@id, 'widget_slot_row')]//div[contains(@class,'title-of-widget')]//div[@class='the-text']//text()[.='$<gridname>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]//div[contains(@class, 'ui-grid-contents-wrapper')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+		var gridObject = document.evaluate("(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<gridname>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]//div[contains(@class, 'ui-grid-contents-wrapper')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+
+		//fetches column cell object
+		var recursiveCallCounter = 0;
+		columnResult = "";
+		function fetchColumnCell()
+		{
+			recursiveCallCounter ++;
+			console.log("Invoked : "+recursiveCallCounter)
+			//exit recursive logic if coulumn not fetched till gwen timeout
+			if(recursiveCallCounter == ${gwen.web.wait.seconds})
+				return;
+
+			//fetch all columns and check if it has our required col
+			var columns = gridObject.querySelectorAll('[ng-repeat="col in colContainer.renderedColumns track by col.uid"] [class*="ui-grid-header-cell-label"]');
+			for(var i=0; i < columns.length; i++){
+				if(columns[i].textContent.trim().toLowerCase() == "$<column_name>".toLowerCase()) {
+					columnResult = columns[i];
+					break;
+				}
+			}
+			//retry fetching cells which are not visible and needs scrolling (lazy loaded cells).
+			if(columnResult == "") {
+				// Not working on chrome
+				//columns[columns.length-1].scrollIntoView({block: "end", behavior: "smooth"});
+				columns[columns.length-1].scrollIntoView(false);
+				setTimeout( fetchColumnCell, 1000 );
+			}
+			else {// if found then return/exit from this function..
+					return;
+			}
+		}
+		fetchColumnCell();
+		if(columnResult != "")
+			columnResult = columnResult.closest(".ui-grid-header-cell-primary-focus")
+		return columnResult;
+})();
+"""
+And I wait for columncell
+And columncell should be displayed
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# There is context menu on "columns" of grid/tree-grid. This step will identify the column for a given grid and perform required context menu option selection
+# It takes care of lazy loaded columns...
+# EXAMPLE :
+# And I "Edit Column Names" on "Exceptions Status Summary" grid-column "Status/Type"
+
+# For nested context menu clicks; scenario eg: "Groupings" --> "Group By (bracket)"
+# Note: Could not find any elegant solution for this scenario; so as of now have kept it simple; till we find one.
+# EXAMPLE :
+# And I "Insert Columns" on "Exceptions Inbox Summary" grid-column "Inbox/Reconciliation Category/Status/Owner/Type"
+# And I select an option "Age Days" from context menu
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: I "<columnmenuoption>" on "<gridname>" grid-column "<column_name>"
+And columncell is defined by "$<column_name>" in "$<gridname>"
+And I wait for columncell
+And I scroll to the bottom of columncell
+And I wait 1 second
+And I right click columncell
+And I select an option "$<columnmenuoption>" from context menu
+# And I wait 2 seconds
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Clicks on context menu option; its generic it can be used for context menu option click on "any ui element"; not specific to grid
+# Can be use for implementing future framework development
+# EXAMPLE : And I select an option "Dock Left" from context menu
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: I select an option "<contextmenuoption>" from context menu
+And context menu element can be located by javascript
+"""
+(()=>{
+   var optionElem="";
+   $('.stl-grid-context-menu [ng-repeat="option in contextMenuOptions"][ng-show="option.shown()"] .option-name').each(function(){
+   	if($(this).text().trim()=="$<contextmenuoption>") optionElem = $(this).get(0)
+   })
+	 return optionElem;
+})();
+"""
+#And context menu element can be located by xpath "(//div[contains(@class, 'menu-content')]//div[@ng-repeat='option in contextMenuOptions']//div[contains(@class, 'option-name')]//text()[normalize-space(.)='$<contextmenuoption>'])[1]/parent::div"
+And I move to context menu element
+And I click context menu element
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Dropdown selection for ui/li implementation.
+# EXAMPLE :
+# And I select option "Last Action" in dropdown list
+
+# Note:
+# GWEN's select DSL was not working as it was expecting "select" node
+# Also simple xpath selection will not work because internal implementation is where each <li>'s text() is broken into multiple text-nodes for font and underline style.
+# Hence found javascript's innertext() as the ideal solution.
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: I select option "<select>" in dropdown list
+And dropdown element can be located by javascript
+"""
+	(()=>{
+	  //find the suggestion list
+		var suggested_list = document.querySelectorAll('[class="suggestion-list"] li[class*="suggestion-item"]');
+		var result;
+		//loop over suggested list and find whether required suggestion is present in the list
+		for(var i=0; i < suggested_list.length; i++)
+		{
+			if(suggested_list[i].innerText.trim() === "$<select>"){
+				result = suggested_list[i];
+				break;
+			}
+		}
+		//return the suggestion object for clicking over it
+		return result;
+	})();
+"""
+And I wait for dropdown element
+And I click dropdown element
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Dropdown selection by regex for ui/li implementation.
+# EXAMPLE :
+# And I select option by regex "Last Action" in dropdown list
+
+# Note:
+# GWEN's select DSL was not working as it was expecting "select" node
+# Also simple xpath selection will not work because internal implementation is where each <li>'s text() is broken into multiple text-nodes for font and underline style.
+# Hence found javascript's innertext() as the ideal solution.
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: I select option by regex "<select>" in dropdown list
+And dropdown element can be located by javascript
+"""
+	(()=>{
+	  //find the suggestion list
+		var suggested_list = document.querySelectorAll('[class="suggestion-list"] li[class*="suggestion-item"]');
+		var result;
+		//loop over suggested list and find whether required suggestion is present in the list
+		for(var i=0; i < suggested_list.length; i++)
+		{
+			//if(suggested_list[i].innerText.trim() === "$<select>"){
+			if(suggested_list[i].innerText.trim().match(/$<select>.*/) != null){
+				result = suggested_list[i];
+				break;
+			}
+		}
+		//return the suggestion object for clicking over it
+		return result;
+	})();
+"""
+And I wait for dropdown element
+And I click dropdown element
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Identifies a grid/tree-grid using its adjucent title and waits for it to load
+# EXAMPLE : I wait for "Exceptions Status Summary" grid to appear
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: I wait for "<table_name>" grid to appear
+#And grid can be located by xpath "(//div[contains(@id, 'widget_slot_row')]//div[contains(@class,'title-of-widget')]//div[@class='the-text']//text()[.='$<table_name>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]"
+And grid can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<table_name>'])[1]/ancestor::div[contains(@id, 'widget_slot_row') or @id='fullScreenWidget']"
+#---- change made in 3.0.01
+And spinner is not present is defined by javascript
+"""
+(()=>{
+var spinnerElement = document.evaluate("(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<table_name>'])[1]/ancestor::div[contains(@id, 'widget_slot_row') or @id='fullScreenWidget']//stl-spinner[@class='m-t-lg ng-isolate-scope']", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+return (spinnerElement == null || spinnerElement == undefined);
+})();
+"""
+And spinner is not present should be "true"
+#And I wait for grid text
+#----
+And I scroll to the bottom of grid
+And I wait 1 second
+#And grid can be located by xpath "(//div[contains(@id, 'widget_slot_row')]//div[contains(@class,'title-of-widget')]//div[@class='the-text']//text()[.='$<table_name>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]"
+#And grid can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<table_name>'])[1]/ancestor::div[contains(@id, 'widget_slot_row') or @id='fullScreenWidget']"
+############
+#And grid can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget') or contains(@ng-attr-id,'btnEditWidgetName')]//text()[.='$<table_name>'])[1]/ancestor::div[contains(@id, 'widget_slot_row') or @id='fullScreenWidget' or contains(@id,'pnlStoreGrid')]"
+#And grid text body can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget') or contains(@ng-attr-id,'btnEditWidgetName')]//text()[.='$<table_name>'])[1]/ancestor::div[contains(@id, 'widget_slot_row') or @id='fullScreenWidget' or contains(@id,'pnlStoreGrid')]//stl-analytics-data-grid"
+#And I wait for grid text body text
+#And I scroll to the bottom of grid
+#And I wait 1 second
+############
+#Scenario: I wait for "<table_name>" grid to appear
+##And grid can be located by xpath "(//div[contains(@id, 'widget_slot_row')]//div[contains(@class,'title-of-widget')]//div[@class='the-text']//text()[.='$<table_name>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]"
+#And grid can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<table_name>'])[1]/ancestor::div[contains(@id, 'widget_slot_row') or @id='fullScreenWidget']"
+##---- change made in 3.0.01
+#And spinner is not present is defined by javascript
+#"""
+#(()=>{
+#var spinnerElement = document.evaluate("(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<table_name>'])[1]/ancestor::div[contains(@id, 'widget_slot_row') or @id='fullScreenWidget']//stl-spinner[@class='m-t-lg #ng-isolate-scope']", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+#return (spinnerElement == null || spinnerElement == undefined);
+#})();
+#"""
+#And spinner is not present should be "true"
+##And I wait for grid text
+##----
+#And I scroll to the bottom of grid
+#And I wait 1 second
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Sort on a given column
+# EXAMPLE : I ascending sort on column "Amount or Value" in "Items Matches Session Status"
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: I sort ascending on column "<columnname>" in "<gridname>"
+And columncell is defined by "$<columnname>" in "$<gridname>"
+And I move to user profile
+And I LEFT_SHIFT click columncell
+And I wait for "$<gridname>" grid to appear
+# remove popup while doing right click
+And multiple sorting popup is visible is defined by javascript
+"""
+(()=>{
+var gotitbutton = $("div[tooltip-animation-class='fade']").is(':visible')
+return gotitbutton
+})();
+"""
+And got it button can be located by javascript "$("div[tooltip-animation-class='fade']").get(0)" if multiple sorting popup is visible
+And I click got it button if multiple sorting popup is visible
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Clear sort wrapper
+# EXAMPLE : I clear sorting on "Items Session Status" grid-column "Reference 1"
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: I clear sorting on "<gridname>" grid-column "<column_name>"
+# Due to known issue of :  (DASH-1319)
+#And columncell is defined by "$<column_name>" in "$<gridname>"
+#And I wait for columncell
+#And I scroll to the bottom of columncell
+#And I wait 1 second
+#And I right click columncell
+#And I select an option "Sort & Filter" from context menu
+#And I select an option "Clear sorting" from context menu
+And I clear sort using mouse left clicks "$<column_name>" "$<gridname>"
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Sorts a grid for given columns
+# EXAMPLE : I sort ascending "Items Matches Session Status" for
+# | Columns | Amount or Value | Reference 1 |
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+@DataTable(header="left")
+Scenario: I sort ascending "<table_name>" for
+# define first column
+And firstColumnoftable is defined by javascript
+"""
+(function(){
+gridObject = document.evaluate("(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<table_name>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]//div[contains(@class, 'ui-grid-contents-wrapper')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+var tempScroll=gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span');
+if (tempScroll.length!=0) {
+return gridObject.querySelector('[class*="ui-grid-contents-wrapper"] > [class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"]:nth-child(1) >div > div >span:nth-child(1)').textContent.trim();
+} else {return gridObject.querySelector('[class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"]:nth-child(2) >div > div >span:nth-child(1)').textContent.trim();}
+})()
+"""
+And firstColumn is "${firstColumnoftable}"
+# remove default sorting
+And I sort ascending on column "${data[1][Columns]}" in "$<table_name>"
+And I clear sorting on "$<table_name>" grid-column "${data[1][Columns]}"
+And I wait for "$<table_name>" grid to appear
+# since above clear sort changes the state of grid; we will need to redefine grid object
+And I execute javascript
+"""
+(function(){
+gridObject = document.evaluate("(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<table_name>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]//div[contains(@class, 'ui-grid-contents-wrapper')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+})()
+"""
+# sort ascending
+And I sort ascending on column "${data[Columns]}" in "$<table_name>" for each data record
+# go back to first col
+And I execute javascript
+"""
+(function(){
+gridObject = document.evaluate("(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<table_name>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]//div[contains(@class, 'ui-grid-contents-wrapper')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+})()
+"""
+And I scroll first column ${firstColumn}
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Gets access to grid cell (supports both grid/tree grid)
+# It takes care of lazy loaded columns and rows.
+# After executing this step; the grid cell object can be references using "gridcell"
+# EXAMPLE :
+# And gridcell is defined by "Status/Type" as "Outstanding Ledger" in "Exceptions Status Summary"
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: gridcell is defined by "<column_name>" as "<cell_value>" in "<table_name>"
+And I wait for "$<table_name>" grid to appear
+And gridcell can be located by javascript
+"""
+(function() {
+										var rowIndex,columnIndex,tableCell = "";
+										var groupedCols, nongroupedCols;
+
+										//get grid object
+										// below xpath was not working for 1. when data is not present and 2. when there are switchable grid options in a single grid.
+										var gridObject = document.evaluate("(//span[contains(@id,'btnEditWidgetName')]//text()[.='$<table_name>'])[1]/ancestor::div[contains(@id, 'pnlStoreGrid1') or contains(@id,'widget_slot_row')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+										//initialise column index and flag which will drive whether its grouped or non group... if column is lazy loaded it will find it by scrolling automatically till gwen timeout
+										var grouped_nongrouped, columnLength;
+										var recursiveCallCounter = 0;
+										function initialiseColumnIndex()
+										{
+											//this function gets recursively invoked till we find the required column by scrolling or till gwen.timeout
+											//exit recursive logic if coulumn not fetched till global timeout
+											recursiveCallCounter ++;
+											console.log("initialiseColumnIndex : "+recursiveCallCounter)
+											if(recursiveCallCounter == ${gwen.web.wait.seconds})
+												return;
+											// get grouped column names
+											groupedCols=[];
+											gridObject.querySelectorAll('[class*="ui-grid-pinned-container"] > [class*="ui-grid-render-container-left"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span:nth-child(1)').forEach((col, index) => { groupedCols.push(col.textContent.trim()); })
+											// get non grouped column names
+											nongroupedCols=[];
+											gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span:nth-child(1)').forEach((col, index) => { nongroupedCols.push(col.textContent.trim());})
+											//check if its grouped column
+											if(groupedCols.indexOf("$<column_name>") != -1) {
+												//since grouped cols has extra column for selecting rows
+												columnIndex = (groupedCols.indexOf("$<column_name>") -  1);
+												//since grouped cols has extra column for selecting rows
+												columnLength = groupedCols.length - 1;
+												grouped_nongrouped = "grouped"
+											}
+											else {
+												//non grouped column
+												columnIndex = nongroupedCols.indexOf("$<column_name>")
+												//if non grouped column is lazy loaded then scroll and refetch
+												if(columnIndex == -1){
+													//scroll
+													var temp =gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span');
+													temp[temp.length-1].scrollIntoView(false);
+													//call back recursive
+													setTimeout( initialiseColumnIndex, 2000 );
+												}
+												columnLength = nongroupedCols.length;
+												grouped_nongrouped = "nongrouped"
+											}
+											return;
+										}
+										initialiseColumnIndex();
+
+										//find the cell and click on it.... if its lazy loaded it will scroll and find it.. till gwen timeout
+										var maxAttemptsForFindingRow = 0;
+										function clickOnCell_When_ColIsResolved() {
+													//get row data based on grouped or non grouped
+													if(grouped_nongrouped === "grouped") rowData=gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] [class*="ui-grid-pinned-container"] [class*="ui-grid-render-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]')
+                          else rowData=gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [id*="-grid-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]')
+
+													//for each row initialised above; fetching cell contents
+													for(var index=0; index < rowData.length; index++)
+													{
+															var row = rowData[index];
+															//cellValues = row.querySelectorAll('[class*="ui-grid-cell-contents"]')
+															cellValues = row.querySelectorAll('[class="ui-grid-cell-contents ng-scope"],[class="ui-grid-cell-contents ng-scope ui-grid-cell-focus"]')
+															// if the grid is tree grid initialize using search using below css class
+															// if this is a tree-grid then cells fetched from using css class 'ui-grid-cell-contents' (check above), we would not return cells containing chart and other information.
+															// thus if below condition is false then we are assuming its a tree grid and thus fetching cells using 'value' css class (check below).
+															if(cellValues.length != columnLength)
+																cellValues = row.querySelectorAll("[class*='value']");
+
+															//initialise cell if found...
+															if(cellValues[columnIndex] != undefined)
+	                            {
+																var cell = cellValues[columnIndex];
+																//ng-binding contains the actual text of cell
+																var cellData = cell.querySelector('[class*="ng-binding"]')
+																if(cellData.textContent.trim() === "$<cell_value>" && rowIndex == undefined)
+																{
+		                              rowIndex = index
+																	tableCell = cellData;
+																	break;
+	                              }
+	                            }
+													}
+                    }
+
+									//retry for finding lazy loaded cells and to exit infinite javascript execution...
+									for(var i=0; i < ${gwen.web.wait.seconds}; i++){
+											//initalizes tableCell variable
+											clickOnCell_When_ColIsResolved();
+											console.log("tableCell value is "+tableCell)
+											if(tableCell != "")
+												break;
+											else {rowData[rowData.length-1].scrollIntoView(false);}
+									}
+									if(tableCell != "")
+										tableCell.scrollIntoView(false);
+									return tableCell;
+      })();
+"""
+And I wait for gridcell
+
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Identifies a grid/tree-grid using its adjucent title and waits for it to load
+# EXAMPLE : And I wait for "Exceptions Status Summary" grid to appear
+#------------------------------------------------------------------------------------------------------------------------
+@StepDef
+Scenario: I check <config_option> option in widget configuration for <grid_name> grid
+#And grid can be located by xpath "(//div[contains(@id, 'widget_slot_row')]//div[contains(@class,'title-of-widget')]//div[@class='the-text']//text()[.='$<table_name>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]"
+And widget config menu can be located by xpath "//span[@class='editable-name ng-binding ng-scope']//text()[.='$<grid_name>']/ancestor::div[@class='title-of-widget m-b-sm pull-left']/div[@class='widget-menu-placeholder active']"
+And config option can be located by xpath "//span[@class='stl-options-title ng-binding']//text()[.='$<config_option>']/ancestor::div[@class='ng-scope small-option boolean']/i[@class='fa fa-fw fa-square stl-checkbox-unchecked ng-scope']"
+And I click widget config menu
+Then config option should be unchecked
+
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+
+@StepDef
+#Get stauc data from ui
+# EXAMPLE: And I get the data from "Items Active Status"
+Scenario:I get the data from <tableName>
+ And I wait 2 seconds
+ And the result is defined by javascript
+  """
+  (function setTimeout() {
+    var rowIndex,columnIndex,tableCell = "";
+			var Cols=[];
+			var groupedData=[];
+			var nonGroupedData=[];
+			 allData=[];
+			var temp=[];
+			gridObject = document.evaluate("(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<tableName>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+			//SAGAR
+			//gridObject.querySelectorAll('[ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span:nth-child(1)').forEach((col, index) => { if (col.textContent.trim() != "" )Cols.push(col.textContent.trim()); })
+			gridObject.querySelectorAll('[class*="ui-grid-clearfix"] >div > div >span:nth-child(1), [class*="ui-grid-clearfix"] [class*="no-header"]').forEach((col, index) => { if(index != 0) Cols.push(col.textContent.trim()); })
+
+			allData.push(Cols);
+			gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [id*="-grid-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]').forEach((col, index) => { temp.push(col.textContent.trim());})
+			for(var index=1; index <= temp.length; index++)
+			{
+				var tempData=[];
+				var tempData1=[];
+				//SAGAR
+				//groupedData=gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] [class*="ui-grid-pinned-container"] [class*="ui-grid-render-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+index+') [ng-if="!row.entity.exploded"] div:nth-child(1)').forEach((col, index) => { tempData1.push(col.textContent.trim().replace(/  +/g, ' ').replace(/\n/g, ' '));})
+				//groupedData=gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] [class*="ui-grid-pinned-container"] [class*="ui-grid-render-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+index+') [row="row"] [class*="ui-grid-cell-contents"], [class*="ui-grid-contents-wrapper"] [class*="ui-grid-pinned-container"] [class*="ui-grid-render-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+index+') [row="row"] [class*="value-bar"], [class*="ui-grid-contents-wrapper"] [class*="ui-grid-pinned-container"] [class*="ui-grid-render-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+index+') [row="row"] [class*="brace-holder"]').forEach((col, index) => { tempData1.push(col.textContent.trim().replace(/  +/g, ' ').replace(/\n/g, ' '));});
+				//groupedData=gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] [class*="ui-grid-pinned-container"] [class*="ui-grid-render-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+index+') [row="row"] [class*="ui-grid-cell-contents"], [class*="ui-grid-contents-wrapper"] [class*="ui-grid-pinned-container"] [class*="ui-grid-render-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+index+') [row="row"] [class*="value-bar"], [class*="ui-grid-contents-wrapper"] [class*="ui-grid-pinned-container"] [class*="ui-grid-render-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+index+') [row="row"] [class*="brace-holder"],[class*="ui-grid-contents-wrapper"] [class*="ui-grid-pinned-container"] [class*="ui-grid-render-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+index+') [row="row"] [class*="ancestral-name"]').forEach((col, index) => { tempData1.push(col.textContent.trim().replace(/  +/g, ' ').replace(/\n/g, ' '));});
+
+				gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] [class*="ui-grid-pinned-container"] [class*="ui-grid-render-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+index+') [row="row"] [class*="value-bar"],[class*="ui-grid-contents-wrapper"] [class*="ui-grid-pinned-container"] [class*="ui-grid-render-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+index+') [row="row"] [class*="brace-holder"],[class*="ui-grid-contents-wrapper"] [class*="ui-grid-pinned-container"] [class*="ui-grid-render-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+index+') [class*="ui-grid-cell"] stl-data-grid-grouping[row="row"][mode="expansion"]').forEach((col, index) => { tempData1.push(col.textContent.trim().replace(/  +/g, ' ').replace(/\n/g, ' '));});
+
+				if (tempData1.length === 0){
+				gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] [class*="ui-grid-pinned-container"] [class*="ui-grid-render-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+index+') [ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.colDef.name"]').forEach((col, index) => { if (col.textContent.trim() != "" )tempData1.push(col.textContent.trim().replace(/  +/g, ' ').replace(/\n/g, ' '));})
+				for(i in tempData1)	{tempData.push(tempData1[i])}
+				}
+				else
+				//{tempData.push(tempData1[0]);}
+				{tempData1.forEach((col1, index)=> {tempData.push(col1);});}
+				nonGroupedData=gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [id*="-grid-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+index+') [ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.colDef.name"]').forEach((col1, index) => { tempData.push(col1.textContent.trim().replace(/  +/g, ' ').replace(/\n/g, ' '));})
+				allData.push(tempData)
+        var tempScroll=gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span');
+        //if (tempScroll.length!=0) {tempScroll[tempScroll.length-1].scrollIntoView({block: "end", behavior: "smooth"});}
+				if (tempScroll.length!=0) {tempScroll[tempScroll.length-1].scrollIntoView(false);}
+        result = "Done";
+			}
+      return result;
+  })();
+  """
+  Then the result should be "Done"
+###########################################################################################################################
+
+  @StepDef
+  #Get stauc data from ui
+	# EXAMPLE: And I extract the data from UI till last column
+  Scenario:I extract the data from UI till last column
+   And I wait 2 seconds
+   And the result is defined by javascript
+   """
+   (function(){
+   var str=""; repeat=1;
+   function ScrollTillColumn() {
+       console.log("In side ScrollTillColumn "+repeat);
+   if( repeat != 0) {
+     console.log("In side condition");
+     var tempScroll=gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span');
+     if (tempScroll.length!= 0) {
+		 	//tempScroll[tempScroll.length-1].scrollIntoView({block: "end", behavior: "smooth"});
+			tempScroll[tempScroll.length-1].scrollIntoView(false);
+		 }
+     PullData()
+    } if( repeat == 0) {str = "Done";console.log("completed")}
+   }
+   ScrollTillColumn();
+
+ function PullData()
+ {
+   console.log("In side pulldata");
+   Cols=[]
+   gridObject.querySelectorAll('[class="ui-grid-render-container ng-isolate-scope ui-grid-render-container-body"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span:nth-child(1)').forEach((col, index) => { if (col.textContent.trim() != "" )Cols.push(col.textContent.trim().replace(/  +/g, ' ').replace(/\n/g, ' ')); })
+
+   var duplicate=0;
+   for(l=0;l<Cols.length;l++)
+   {
+     if (allData[0].indexOf(Cols[l]) >= 0) { duplicate++ };if (allData[0].indexOf(Cols[l]) < 0) { allData[0].push(Cols[l]) }
+   }
+
+   var temp=[];
+
+   gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [id*="-grid-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]').forEach((col, index) => { temp.push(col.textContent.trim().replace(/  +/g, ' ').replace(/\n/g, ' '));})
+
+   for(var i=1; i <= temp.length; i++)
+   {
+     var tempData=[];
+     gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [id*="-grid-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]:nth-child('+i+') [ng-repeat="(colRenderIndex, col) in colContainer.renderedColumns track by col.colDef.name"]').forEach((col1, index) => { tempData.push(col1.textContent.trim().replace(/  +/g, ' ').replace(/\n/g, ' '));})
+
+      tempData.splice(0, ++duplicate);
+      repeat = tempData.length; console.log("repeat count is"+repeat);
+      if (tempData.length > 0) {
+        for(j in tempData) { allData[i].push(tempData[j]) }
+      }
+   }
+   repeat = repeat;
+ }
+ return str
+   })()
+
+   """
+   Then the result should be "Done"
+###########################################################################################################################
+
+   @StepDef
+   #Step to scroll to first column of balance ladder
+	 # EXAMPLE: And I scroll first column "Item Status/Item Type"
+   Scenario: I scroll first column <firstColumn>
+   And go to first column is defined by javascript
+   """
+	 (function(){
+	 var tempScroll=gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span');
+	 if (tempScroll.length!=0) {
+	 //return gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span')[0].textContent.trim().replace(/  +/g, ' ').replace(/\n/g, ' ').indexOf("$<firstColumn>") < 0
+	 return gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span')[0].textContent.trim().replace(/  +/g, ' ').replace(/\n/g, ' ') != "$<firstColumn>"
+	 } else {return false}
+	 })()
+   """
+   Then I scroll to first column of balances while go to first column using 1 second delay and 100 second timeout
+	 # sleep for scroll to complete
+	 #And I wait 1 seconds
+###########################################################################################################################
+
+   @StepDef
+   #Step to scroll to first column of balances
+	 # EXAMPLE: And I scroll to first column of balances
+   Scenario: I scroll to first column of balances
+   	And I execute javascript
+   	"""
+		(function(){
+ 	 var tempScroll=gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span');
+ 	 if (tempScroll.length!=0) {
+	 //gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span')[0].scrollIntoView({block: "end", behavior: "smooth"});
+	 gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span')[0].scrollIntoView(false);
+	 } else {
+	 	// gridObject.querySelectorAll('[class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span')[0].scrollIntoView({block: "end", behavior: "smooth"});
+		gridObject.querySelectorAll('[class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span')[0].scrollIntoView(false);
+	 }
+ 	 })()
+   	"""
+   	#And I wait 2 seconds
+###########################################################################################################################
+
+    @StepDef
+    #Step to assign value
+		# EXAMPLE: And I assign value
+    Scenario: I assign value
+      And I execute javascript
+      """
+        n=allData;
+      """
+###########################################################################################################################
+
+    @StepDef
+    #Step to scroll down
+		# EXAMPLE: And I scroll down
+    Scenario: I scroll down
+     And I execute javascript
+     """
+     var verticalScroll=gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] [class*="ui-grid-pinned-container"] [class*="ui-grid-render-container"] [ng-repeat="(rowRenderIndex, row) in rowContainer.renderedRows track by $index"]')
+     			//verticalScroll[verticalScroll.length-1].scrollIntoView({block: "end", behavior: "smooth"});
+					verticalScroll[verticalScroll.length-1].scrollIntoView(false);
+     """
+     #And I wait 2 seconds
+###########################################################################################################################
+
+     @StepDef
+     #Step to combine results
+		 # EXAMPLE: And I compare results and merge it
+     Scenario: I compare results and merge it
+     And the result is defined by javascript
+     """
+     (function mergeResults() {
+     function searchForArray(haystack, needle){
+        var i, j, current;
+        for(i = 0; i < haystack.length; ++i){
+        if(needle.length === haystack[i].length){
+         current = haystack[i];
+         for(j = 0; j < needle.length && needle[j] === current[j]; ++j);
+         if(j === needle.length)
+           return i;
+           }
+      }
+        return -1;
+      }
+      counter=0;
+      for( i in allData)
+      {
+        if (searchForArray(n, allData[i]) <0) {counter++; n.push(allData[i]); result="Done" }
+      }
+      return result
+     })();
+     """
+     Then the result should be "Done"
+
+###########################################################################################################################
+
+     @StepDef
+     #Step to take decision to scroll down or not
+		 #EXAMPLE: And I takes balance data till last column from Items Active Status
+     Scenario: I takes balance data till last column from <table>
+     And I scroll down
+     And I get the data from $<table>
+     And I extract the data from UI till last column
+     And I scroll first column ${firstColumn}
+     And I scroll to first column of balances
+     And I compare results and merge it
+		 And I scroll down
+###########################################################################################################################
+
+     @StepDef
+     #Step to take decision to scroll down or not
+		 #EXAMPLE: And I verify whether to scroll down
+     Scenario: I verify whether to scroll down
+     And scroll down is defined by javascript
+     """
+     (function(){
+       return counter !=0;
+     })();
+     """
+     And I takes balance data while scroll down
+###########################################################################################################################
+
+@StepDef
+#EXAMPLE: And I validate export name as "Reconciliations.csv" in "Export View Data" for "Reconciliations" grid
+Scenario: I validate export name as "<expectedExportName>" in "<exportOption>" for "<gridName>" grid
+# Save the default export
+Given I wait for "$<gridName>" grid to appear
+And I click grid
+And grid title heading can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<gridName>'])[1]/ancestor::div[@class='total-heading']"
+And export button can be located by xpath ".//*[contains(@id,'btnDownloadwidget')]" in grid title heading
+And I scroll to the bottom of export button
+And I move to export button
+When I click export button
+And export raw button can be located by xpath ".//*[contains(text(), '$<exportOption>')]"
+And I move to export raw button
+And I click export raw button
+And I capture the current screenshot
+#And I execute system process "cmd /c START /W ${baseDirectory}..\..\..\Utilities\AutoIt\Save_Open_Dialog.exe ${baseDirectory}data\${moduleName}\actual"
+# Validate the default export path
+#And I validate file exists "${baseDirectory}data\${moduleName}\actual\$<expectedExportName>"
+And I validate file exists "${baseDirectory}data\${moduleName}\download_dir\$<expectedExportName>"
+
+@StepDef
+# Example : And I export & validate "<raw data|view data|filtered raw data>" for dashboard "<grid name>" and store results in "<export name>"
+Scenario: I export & validate "<exportOptionName>" for dashboard "<gridName>" and store results in "<exportName>"
+##################################################################################
+# delete existing csv
+And I execute system process "${baseDirectory}bat\cleanupExistingDownloads.bat ${baseDirectory}data\\${moduleName}\\download_dir"
+##################################################################################
+# initialise ui option from parameter
+Given value is true is defined by javascript "(()=>{ return "$<exportOptionName>" == "raw data"})();"
+And   exportOptionUiName is "Export Raw Data" if value is true
+And   value is true is defined by javascript "(()=>{ return "$<exportOptionName>" == "view data"})();"
+And   exportOptionUiName is "Export View Data" if value is true
+And   value is true is defined by javascript "(()=>{ return "$<exportOptionName>" == "filtered raw data"})();"
+And   exportOptionUiName is "Export Filtered Raw Data" if value is true
+# export
+And I wait for "$<gridName>" grid to appear
+And I execute javascript
+"""
+(()=>{
+gridObjNameField = "";
+$('span[id*="btnEditWidgetNamewidget"]').each(function(){
+	if($(this).text().trim() == "$<gridName>") gridObjNameField = $(this)
+})
+gridObjNameField.closest(".total-heading").mouseenter()
+gridObjNameField.closest(".total-heading").find("[id*='btnDownloadwidget']").mouseenter()
+})();
+"""
+And I wait 1 second
+And I execute javascript "gridObjNameField.closest(".total-heading").find('div.sub-option:contains("${exportOptionUiName}")').click()"
+And  I execute javascript "gridObjNameField.closest(".total-heading").find("[id*='btnDownloadwidget']").mouseout(); gridObjNameField.closest(".total-heading").mouseout()"
+And I wait 1 second
+#And grid title heading can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<gridName>'])[1]/ancestor::div[@class='total-heading']"
+#And I click grid title heading
+#And export button can be located by xpath ".//*[contains(@id,'btnDownloadwidget')]" in grid title heading
+#And I scroll to the bottom of export button
+#And I move to export button
+#When I click export button
+#And export raw button can be located by xpath ".//*[contains(text(), '${exportOptionUiName}')]"
+#And I move to export raw button
+#And I click export raw button
+And I wait 3 second
+# Rename default downloaded csv to export name csv
+And I execute system process "${baseDirectory}bat\moveDefaultDownloadedCsv.bat ${baseDirectory}data ${moduleName} $<exportName>.csv"
+# Convert csv to excel & sort
+And sorting_required is defined by javascript "(()=>{ return "${sort order of export}" != ""})();"
+And sorting_not_required is defined by javascript "(()=>{ return "${sort order of export}" == ""})();"
+And I execute system process "java -jar ${baseDirectory}..\..\..\Utilities\JavaExcelComparison\ExcelDiff.jar -csv  "${baseDirectory}data\${moduleName}" "$<exportName>" $<exportName>.xlsx , "-sort=${sort order of export}" "-debug=yes"" if sorting_required
+And I execute system process "java -jar ${baseDirectory}..\..\..\Utilities\JavaExcelComparison\ExcelDiff.jar -csv  "${baseDirectory}data\${moduleName}" "$<exportName>" $<exportName>.xlsx , "-sort=none" "-debug=yes"" if sorting_not_required
+# compare excel
+And I execute system process "java -jar ${baseDirectory}..\..\..\Utilities\JavaExcelComparison\ExcelDiff.jar -diff ${moduleName} $<exportName> ${moduleName} $<exportName> ${baseDirectory}data ${baseDirectory}..\..\..\Utilities\JavaExcelComparison "${moduleName}_Comparesheets_Report.csv" "-debug=no""
+
+# reinitializing default value to blank
+And sort order of export is ""
+# validate
+And I clear all filters on "$<gridName>"
+And compareResult is defined by system process "${baseDirectory}bat\resultParallel.bat ${moduleName}_Comparesheets_Report"
+And compareResult_value is "${compareResult}"
+And compareResult_value should match regex ".*,"?[pP][aA][sS][sS]["],.*"
+
+  @StepDef
+  #Step to take decision to scroll down or not
+	#EXAMPLE: And I validate "Items Active Status" dashboard and store results in "ItemsActiveStatusSummary"
+  Scenario: I validate "<tableName>" dashboard and store results in "<exportName>"
+		 And I wait for "$<tableName>" grid to appear
+		 And firstColumnoftable is defined by javascript
+     """
+     (function(){
+		 var gridObject = document.evaluate("(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<tableName>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+		 var tempScroll=gridObject.querySelectorAll('[class*="ui-grid-contents-wrapper"] > [class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"] >div > div >span');
+		 if (tempScroll.length!=0) {
+		 return gridObject.querySelector('[class*="ui-grid-contents-wrapper"] > [class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"]:nth-child(1) >div > div >span:nth-child(1)').textContent.trim().replace(/  +/g, ' ').replace(/\n/g, ' ');
+		 } else {return gridObject.querySelector('[class*="ui-grid-render-container"] [ng-repeat="col in colContainer.renderedColumns track by col.uid"]:nth-child(2) >div > div >span:nth-child(1)').textContent.trim().replace(/  +/g, ' ').replace(/\n/g, ' ');}
+     })()
+     """
+		 And firstColumn is "${firstColumnoftable}"
+		 And I get the data from $<tableName>
+		 And I wait 2 seconds
+		 And I extract the data from UI till last column
+     And I scroll first column ${firstColumn}
+     And I scroll to first column of balances
+     And I assign value
+     And I scroll down
+     And I get the data from $<tableName>
+     And I extract the data from UI till last column
+     And I scroll first column ${firstColumn}
+     And I scroll to first column of balances
+     And I compare results and merge it
+     And I can scroll down is defined by javascript
+     """
+     (function(){
+       return counter !=0;
+     })();
+     """
+     And I takes balance data till last column from $<tableName> while I can scroll down using 1 second delay and 200 second timeout
+     #And I verify results for $<exportName>
+		 #Then I verify execution results for "$<testexportNamecase>"
+		 And I execute javascript
+		 """
+		 data = n;
+			 if("${gwen.web.browser}"=="chrome") {
+				 var csvContent = "data:text/csv;charset=utf-8,";
+				 data.forEach(function(infoArray, index){
+				 dataString = infoArray.join(";");
+				 csvContent += index < data.length ? dataString+ "\n" : dataString;
+				 });
+				 var encodedUri = encodeURI(csvContent);
+				 var link = document.createElement("a");
+				 link.setAttribute("href", encodedUri);
+				 link.setAttribute("download", "my_data.csv");
+				 document.body.appendChild(link);
+				 link.click();
+			 }
+			 if("${gwen.web.browser}"=="IE") {
+				 var csvContent = "";
+				 data.forEach(function(infoArray, index){
+				 dataString = infoArray.join(";");
+				 csvContent += index < data.length ? dataString+ "\n" : dataString;
+				 });
+			 if (navigator.msSaveBlob) {
+				 navigator.msSaveBlob(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }), "filename.csv")};
+			 }
+		 """
+		 And I scroll to top of page
+		 And I check ongoing module for "$<exportName>"
+		 And I save and compare result for "$<exportName>"
+		 And testcaseIs is "$<exportName>:''"
+		 And I verify testresult of testcasesno "${testcaseNoIs}" for each testcaseNoIs in testcaseIs delimited by ":"
+
+
+@StepDef
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Open timeline on grid
+# Example : On "Exceptions Status" in "Reconciliation" I open timeline for "BLTITEMTLMATTACH CASH DOUBLE ENTRY"
+#------------------------------------------------------------------------------------------------------------------------
+Scenario: On "<gridname>" in "<columnname>" I open timeline for "<cellvalue>"
+# Open timeline
+Given gridcell is defined by "$<columnname>" as "$<cellvalue>" in "$<gridname>"
+And I wait for gridcell text
+And I double click gridcell
+And I wait for timeline search field
+And I move to timeline search field
+
+@StepDef
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Download attachment from timeline
+# Example : I download "ATTACHMENT1_Attachment.Png" attachment from timeline
+#------------------------------------------------------------------------------------------------------------------------
+Scenario: I download "<attachmentName>" attachment from timeline
+# Search timeline
+And I wait for timeline search field
+And timeline search field should be displayed
+And I type "$<attachmentName>" in timeline search field
+# Click on attachment link
+And timeline attachment link can be located by xpath "//stl-timeline-attachment//*[contains(@id, 'pnlTLAttachment')]//*[contains(text(),'$<attachmentName>')]//parent::a[@ng-click='download()']"
+And I wait for timeline attachment link
+And timeline attachment link should be displayed
+And I click timeline attachment link
+# Auto downloaded attachment
+And I wait for page to load
+And I wait 3 second
+
+@StepDef
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Checks availability of options in export context menu
+# Example :
+# And I check "Export View Data" option should be "<available/not available>" for "Reconciliations" grid
+#------------------------------------------------------------------------------------------------------------------------
+Scenario: I check "<contextmenuoption>" option should be "<available_notavailable>" for "<gridName>" grid
+# Open export context menu
+Given I wait for "$<gridName>" grid to appear
+And I click grid
+And grid title heading can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<gridName>'])[1]/ancestor::div[@class='total-heading']"
+And export button can be located by xpath ".//*[contains(@id,'btnDownloadwidget')]" in grid title heading
+And I scroll to the bottom of export button
+And I move to export button
+And I click export button
+# Validate its available/not available..
+And export option can be located by xpath ".//*[contains(text(), '$<contextmenuoption>')]"
+And value is true is defined by javascript "(()=>{ return "$<available_notavailable>" == "available"})();"
+And export option should be displayed if value is true
+And value is true is defined by javascript "(()=>{ return "$<available_notavailable>" == "not available"})();"
+And export option should not be displayed if value is true
+And I move to user profile
+
+@StepDef
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Sets column visibility for given grid
+# Example :
+# And I set column "Status/Type" to be visible for grid "Items Active Status Summary"
+#------------------------------------------------------------------------------------------------------------------------
+Scenario: I set column "<columnname>" to be "visible" for grid "<gridName>"
+# Open grid widge config menu
+Given I wait for "$<gridName>" grid to appear
+And I click grid
+And stl widget config menu can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<gridName>'])[1]/ancestor::div[@class='total-heading']//*[contains(@class, 'stl-widget-config-menu menu-header')]"
+And I move to stl widget config menu
+And I wait for hide column option text
+# Make it visible if already not visible
+And value is true is defined by javascript
+"""
+(()=>{
+	var showFilters = document.evaluate(".//*[contains(@id, 'btnOptions-HideColumnHeaders')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+  if (showFilters != null) {
+
+		var checkbox = document.evaluate(".//*[contains(@class,'stl-checkbox-checked')]", showFilters, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+		return (checkbox != null) && (checkbox.length != 0)
+	}
+	else return false;
+})();
+"""
+And I click hide column option if value is true
+And I move to user profile
+
+@StepDef
+#########################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------
+# Sets column invisibility for given grid
+# Example :
+# And I set column "Status/Type" to be "not visible" for grid "Items Active Status Summary"
+#------------------------------------------------------------------------------------------------------------------------
+Scenario: I set column "<columnname>" to be "not visible" for grid "<gridName>"
+# Open grid widge config menu
+Given I wait for "$<gridName>" grid to appear
+And I click grid
+And stl widget config menu can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<gridName>'])[1]/ancestor::div[@class='total-heading']//*[contains(@class, 'stl-widget-config-menu menu-header')]"
+And I move to stl widget config menu
+And I wait for hide column option text
+# Make it not visible if visible
+And value is true is defined by javascript
+"""
+(()=>{
+	var showFilters = document.evaluate(".//*[contains(@id, 'btnOptions-HideColumnHeaders')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+  if (showFilters != null) {
+		var checkbox = document.evaluate(".//*[contains(@class,'stl-checkbox-checked')]", showFilters, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+		return (checkbox == null) || (checkbox.length == 0)
+	}
+	else return false;
+})();
+"""
+And I click hide column option if value is true
+And I move to user profile
+
+@StepDef
+Scenario: I clear sort using mouse left clicks "<columnname>" "<gridname>"
+And columncell is defined by "$<columnname>" in "$<gridname>"
+And I wait for columncell
+And I scroll to the bottom of columncell
+And I wait 1 second
+And I click columncell
+# check if up or down arrow is displayed
+And ascending_desc icon is present is defined by javascript
+"""
+(()=>{
+var uparrow =columnResult.parentElement.querySelectorAll("i[class='ui-grid-icon-up-dir']").length
+var downarrow = columnResult.parentElement.querySelectorAll("i[class='ui-grid-icon-down-dir']").length
+return ((uparrow == 1) || (downarrow == 1))
+})();
+"""
+And I click column cell and wait for grid to refresh "$<gridname>" while ascending_desc icon is present
+
+@StepDef
+Scenario: I click column cell and wait for grid to refresh "<gridname>"
+And I click columncell
+And I wait for "$<gridname>" grid to appear
+
+@StepDef
+Scenario: I expand all groups on dashboard "<dashboardName>"
+And firstCell can be located by javascript
+"""
+(()=>{
+var gridObject = document.evaluate("(//span[contains(@id,'btnEditWidgetName')]//text()[.='$<dashboardName>'])[1]/ancestor::div[contains(@id, 'pnlStoreGrid1') or contains(@id,'widget_slot_row')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+var cells  = gridObject.querySelectorAll('.stl-analytics-data-grid-grouping .ui-grid-cell-contents span');
+return cells[0];
+})();
+"""
+And I scroll to the bottom of firstCell
+And I scroll to the bottom of firstCell
+And I capture the current screenshot
+And I wait 2 second
+And I right click firstCell
+# mouse move to contextmenuoption
+#And context menu element can be located by xpath "//text()[normalize-space(.)='Expand/Collapse']/ancestor::div[@ng-repeat='option in contextMenuOptions']/i[contains(@class, 'show-sub-menu')]"
+#And I move to context menu element
+And I execute javascript "$('div.option-name:contains("Expand/Collapse")').closest('div[ng-repeat="option in contextMenuOptions"]').find('i.show-sub-menu').mouseenter()"
+# mouse click on to contextmenuoption2
+#And context menu element can be located by xpath "//text()[normalize-space(.)='Expand All Groups']/parent::div[contains(@class, 'option-name')]"
+#And I click context menu element
+And I execute javascript "$('div.option-name:contains("Expand All Groups")').closest('div.option-name').click()"
+And I execute javascript "$('div.option-name:contains("Expand/Collapse")').closest('div[ng-repeat="option in contextMenuOptions"]').find('i.show-sub-menu').mouseout()"
+
+
+###############################################################
+# Example
+# And I valdiate data for "<colName>" column in "<gridName>" grid
+# | ExpectedVal |
+# | Testcash 1|
+# | Testcash 2|
+###############################################################
+@DataTable(header="top")
+@StepDef
+Scenario: I valdiate data for "<colName>" column in "<gridName>" grid
+And I validate "$<colName>" column data "${data[ExpectedVal]}" at index "${record.number}" in "$<gridName>" grid for each data record
+
+@StepDef
+Scenario: I validate "<columnName>" column data "<expectedVal>" at index "<index>" in "<gridName>" grid
+And columnDataAtIndex can be located by javascript
+"""
+(function(){
+var colIndex=-1;
+$('[id*="btnEditWidgetNamewidget"]:contains("$<gridName>")').closest('stl-dashboard-widget-slot').find('[role="columnheader"] .ui-grid-header-cell-label').each (function(index){
+	if($(this).text().trim() == "$<columnName>"){
+		colIndex= index
+	}
+});
+return $('[id*="btnEditWidgetNamewidget"]:contains("$<gridName>")').closest('stl-dashboard-widget-slot').find('[role="row"] .ui-grid-cell:nth-child('+colIndex+')').get($<index>-1);
+})();
+"""
+And columnDataAtIndex should be "$<expectedVal>"
+
+@StepDef
+Scenario: I validate group code filter in widget query for "<groupName>" group
+And I execute javascript "$('[id*="btnShowQuerywidget"]').click()"
+And I wait for widget performance popup
+And actual query is defined by javascript "$('#widget-query').text().trim()"
+And actual query should contain "group_code IN ('$<groupName>') OR (MH.corr_acc_no < 0)"
+And I click ok button in widget performance
+
+@StepDef
+Scenario: I clear search filter on "<gridName>" grid
+And clear custom search button is enabled is defined by javascript
+"""
+		(()=>{
+		var gridContainer = document.evaluate("(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<gridName>'])[1]/ancestor::div[contains(@id, 'widget_slot_row')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+		//fetch clear search button in grid
+		clearSearch = gridContainer.querySelectorAll("[class='clear-search']");
+		// return whether its enabled as true/false
+		return (clearSearch.length != 0);
+		})();
+"""
+Then I execute javascript "clearSearch[0].click();"
+
+# Example : Tooltip should be in open state
+# And I validate tooltip to "DESCRIPTION: Trade Quantity > 5000"
+@StepDef
+Scenario: I validate tooltip to "<expectedTooltip>"
+And tooltip elm can be located by javascript "$('.tooltip-inner')"
+And I wait for tooltip elm
+And actualToolTip is defined by javascript "$('.tooltip-inner').text().replace(/\s/g,"")"
+And tooltip validated is defined by javascript "'${actualToolTip}'=='$<expectedTooltip>'.replace(/\s/g,"")"
+#And actualToolTip should be "$<expectedTooltip>"
+And tooltip validated should be "true"
+And I move to user profile
+
+
+@StepDef
+Scenario:I clear all filters on "<gridName>"
+Given I wait for "$<gridName>" grid to appear
+And I click grid
+And grid title heading can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<gridName>'])[1]/ancestor::div[@class='total-heading']"
+And filter button can be located by xpath ".//*[contains(@id,'btnFilterwidget')]" in grid title heading
+And I scroll to the bottom of filter button
+And I ALT click filter button
+
+@StepDef
+Scenario:I perform expand full screen and return action on "<gridName>"
+Given I wait for "$<gridName>" grid to appear
+And I click grid
+And grid title heading can be located by xpath "(//span[contains(@id,'btnEditWidgetNamewidget')]//text()[.='$<gridName>'])[1]/ancestor::div[contains(@id, 'widget_slot_row') or @id='fullScreenWidget']"
+And grid title operation can be located by xpath ".//*[@uib-tooltip='Expand to Full Screen']/span" in grid title heading
+And I scroll to the bottom of grid title operation
+And I move to grid title operation
+Then I click grid title operation
+And popupHeader should be "$<gridName> is now in Full Screen Mode"
+And popupHeaderMsg should be "It can be returned to standard size at any point by clicking the collapse icon at the top right. When your page is refreshed, all widgets will return to their natural sizes."
+And I click okButton
+And grid title operation can be located by xpath ".//*[@uib-tooltip='Return to Normal Size']/span" in grid title heading
+And I click grid
+And I scroll to the bottom of grid title operation
+And I move to grid title operation
+Then I click grid title operation
+And I click grid
+And grid title operation can be located by xpath ".//*[@uib-tooltip='Expand to Full Screen']/span" in grid title heading
+And grid title operation should be displayed

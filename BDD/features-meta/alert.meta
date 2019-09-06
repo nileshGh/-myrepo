@@ -1,0 +1,1663 @@
+@alerts
+Feature: Alerts related meta
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Sets Alerts
+#--------------------------------------------------------------------------------------
+Scenario: I go to the alert page
+  Given I navigate to module alert
+  ##WA##Temp Revision: As discussed
+  ##WA##And I refresh the current page
+  And group input field should be displayed
+  And I wait for page to load
+
+
+@StepDef
+@DataTable(header="top")
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verifies load strategy
+#----------------------------------------------------------------------------------------
+Scenario:I load strategy
+  Given I load strategy "${data[fileName]}" for each data record
+  And I refresh the current page
+  And I wait 5 seconds
+
+@StepDef
+Scenario:I load strategy "<fileName>"
+  ##WA##CMS-11137
+  And criticalTime is defined by javascript
+   """
+    (function(){
+      var result=false;
+      var criticalMinutes=[58,59,00,01];
+      var minutes= new Date(new Date().toLocaleString('en-US', { timeZone: '${timeZone}' })).getMinutes()
+      if(criticalMinutes.includes(minutes))
+        result=true;
+      return result;
+    })()
+   """
+  ##WA##Temp Revision: As discussed
+  ##WA##And I wait 60 seconds while criticalTime using 30 second delay and 6 minute timeout
+  And I execute system process "cmd /c cd ..\..\..\Utilities\Pipe\Artifacts && QueueSender.bat ${activemq.ip} ${activemq.port} "Execute" "${messageSenderAppDir}/HSS/script/copyFileToFromDir.sh $<fileName>" "LOADCASHFLOWS" "
+  And I wait 60 seconds
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Steps to lock fund
+#----------------------------------------------------------------------------------------
+Scenario:I lock fund "<fundName>" having status "<status>"
+  And I select fund "$<fundName>" having status "$<status>"
+  And I click lockToMe
+  And alert box title should be "Success"
+  And alert box message should be "Alert lock succeeded."
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+  And I verify fund "$<fundName>" with status "$<status>" is locked
+  And statusIsClosed is defined by javascript "(function() {return "$<status>" == "Closed"})();"
+  And statusIsOpen is defined by javascript "(function() {return "$<status>" != "Closed"})();"
+  And I verify Email preview button is enabled
+  And I verify Show narrative button is enabled
+  And I verify Close button is disabled if statusIsClosed
+  And I verify Close button is enabled if statusIsOpen
+  And showNarrativeButton should be displayed  if statusIsClosed
+  And addNarrativeButton should be displayed if statusIsOpen
+  And I verify status of buttons of locked fund
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Steps to verify status of buttons of locked fund
+#----------------------------------------------------------------------------------------
+Scenario: I verify status of buttons of locked fund
+  And I verify Lock to Me button is disabled if statusIsClosed
+  And I verify Lock to Me button is disabled if statusIsOpen
+  And I verify Unlock button is disabled if statusIsClosed
+  And I verify Unlock button is enabled if statusIsOpen
+  And I verify Force Unlock button is disabled
+
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Steps to unlock fund
+#----------------------------------------------------------------------------------------
+Scenario:I unlock fund "<fundName>" having status "<status>"
+  And I select fund "$<fundName>" having status "$<status>"
+  And I click unlockAlert
+  And alert box title should be "Success"
+  And alert box message should be "Alert unlock succeeded."
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+  And I verify fund "$<fundName>" with status "$<status>" is unlocked
+  And statusIsClosed is defined by javascript "(function() {return "$<status>" == "Closed"})();"
+  And statusIsOpen is defined by javascript "(function() {return "$<status>" != "Closed"})();"
+  And I verify Email preview button is enabled
+  And I verify Show narrative button is enabled
+  And I verify Close button is disabled if statusIsClosed
+  And I verify Close button is disabled if statusIsOpen
+  And I verify Lock to Me button is disabled if statusIsClosed
+  And I verify Lock to Me button is enabled if statusIsOpen
+  And I verify status of buttons of unlocked fund
+
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Steps to verify status of buttons of unlocked fund
+#----------------------------------------------------------------------------------------
+Scenario: I verify status of buttons of unlocked fund
+  And I verify Lock to Me button is disabled if statusIsClosed
+  And I verify Lock to Me button is enabled if statusIsOpen
+  And I verify Unlock button is disabled if statusIsClosed
+  And I verify Unlock button is disabled if statusIsOpen
+  And I verify Force Unlock button is disabled
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Steps to verify status of all buttons
+#----------------------------------------------------------------------------------------
+Scenario: I verify default status of all button
+  And I verify Email preview button is disabled
+  And I verify Show narrative button is disabled
+  And I verify Close button is disabled
+  And I verify Lock to Me button is disabled
+  And I verify Unlock button is disabled
+  And I verify Force Unlock button is disabled
+
+@StepDef
+Scenario: I verify <buttonIs> button is disabled
+  And buttonStatus is defined by javascript "(function() {return $('a:contains("$<buttonIs>")').attr("disabled")})()"
+  And buttonStatus should be "disabled"
+
+@StepDef
+Scenario: I verify <buttonIs> button is enabled
+  And buttonStatus is defined by javascript "(function() {return typeof $('a:contains("$<buttonIs>")').attr("disabled")=="undefined"})()"
+  And buttonStatus should be "true"
+
+
+
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Steps to lock fund
+#----------------------------------------------------------------------------------------
+Scenario:I verify button status for "<fundName>" having status "<status>"
+  And statusIsClosed is defined by javascript "(function() {return "$<status>" == "CLOSED"})();"
+  And statusIsOpen is defined by javascript "(function() {return "$<status>" == "OPEN"})();"
+  And I select fund "$<fundName>" having status "$<status>"
+  And I verify Lock to Me button is disabled if statusIsClosed
+  And I verify Lock to Me button is enabled if statusIsOpen
+  And I verify Unlock button is disabled
+  And I verify Force Unlock button is disabled
+  And I verify Close button is disabled
+  And I verify Email preview button is enabled
+  And addNarrativeButtonIsDisable is defined by javascript
+  """
+  (function(){return $('a:contains("Add narrative")').length==0})()
+  """
+  And addNarrativeButtonIsDisable should be "true"
+  And colorCheck is defined by javascript
+  """
+  (function (){
+    var rowIndex='';var result=false;
+    $('.ag-body-viewport [role="row"] ').each(function(index){
+
+      if($(this).text().indexOf('$<fundName>$<status>')>=0){
+      rowIndex=$(this).attr('row-index');
+      return false;
+    }
+    });
+    if("$<status>"=="OPEN" && $('[row-index="'+rowIndex+'"] i[class="fa fa-circle open-status-color"]').length==1){
+      result=true;
+    }else if("$<status>"=="CLOSED"  && $('[row-index="'+rowIndex+'"] i[class="fa fa-circle closed-color-color"]').length==1){
+      result=true;
+    }
+    return result;
+  })()
+  """
+  And colorCheck should be "true"
+  And I verify Show narrative button is enabled
+  And I click showNarrativeButton
+  And I verify Save button is disabled
+  And I wait for cancelButton
+  And I click cancelButton
+  And I select fund "$<fundName>" having status "$<status>"
+  And I expand alert for fund "$<fundName>" having status "$<status>"
+  And addNoteStatus is defined by javascript
+  """
+  (function(){
+    var result=true;
+    $('[col-id="lockedTo"]').each(function(){
+  	if($(this).find("i").hasClass("fa fa-plus-square")==true){
+  	result=false;
+  	}
+    });
+    return result;
+  })()
+  """
+  And addNoteStatus should be "true"
+  And I collapse alert for fund "$<fundName>" having status "$<status>"
+
+
+
+@StepDef
+@DataTable(header="top")
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verifies narratveText limit
+#----------------------------------------------------------------------------------------
+Scenario:I verify narratveText limit
+    And I add narrarative "${data[narrativeTextEnterred]}" to fund "${data[fundName]}" having status "${data[status]}" and expect narrative as "${data[expectedNarrativeText]}" for each data record
+
+@StepDef
+Scenario:I add narrarative "<narrativeText>" to fund "<fundName>" having status "<status>" and expect narrative as "<expectedNarrativeText>"
+  And I lock fund "$<fundName>" having status "$<status>"
+  And I select fund "$<fundName>" having status "$<status>"
+  And I click addNarrative
+  And I enter "$<narrativeText>" in narrativeInputField
+  And I click saveNarrative
+  And alert box title should be "Success"
+  And alert box message should be "Narrative added."
+  And I click notification dialog if dialogExist
+  And narrativeIs is defined by javascript
+  """
+  (function(){
+    var rowIndex='';
+    $('.ag-body-viewport [role="row"] ').each(function(index){
+
+      if($(this).text().indexOf('$<fundName>$<status>')>=0){
+      rowIndex=$(this).attr('row-index');
+      return false;
+    }
+    });
+    return $('[row-index="'+rowIndex+'"] div[col-id="narrative"]').text().trim();
+  })()
+  """
+  And narrativeIs should be "$<expectedNarrativeText>"
+  And I wait 2 seconds
+  And I select fund "$<fundName>" having status "$<status>"
+  And I wait 2 seconds
+  And I unlock fund "$<fundName>" having status "$<status>"
+
+
+@StepDef
+@DataTable(header="top")
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verifies notes on alert screen
+#----------------------------------------------------------------------------------------
+Scenario: I verify notes for alert
+  And I add note "${data[noteTextEnterred]}" to fund "${data[fundName]}" having status "${data[status]}" with details "${data[Account Number]}" "${data[CCY]}" "${data[Amount]}" "${data[Value Date]}" and expect narrative as "${data[expectedNoteText]}" for each data record
+
+@StepDef
+Scenario:I add note "<noteTextEnterred>" to fund "<fundName>" having status "<status>" with details "<Account Number>" "<CCY>" "<Amount>" "<Value Date>" and expect narrative as "<expectedNoteText>"
+  And I lock fund "$<fundName>" having status "$<status>"
+  And I select fund "$<fundName>" having status "$<status>"
+  And I expand alert for fund "$<fundName>" having status "$<status>"
+  And I locate note button for alert with "$<fundName>" "$<Account Number>" "$<CCY>" "$<Amount>" "$<Value Date>"
+  And I click note button
+  And I enter "$<noteTextEnterred>" in noteInputField
+  And I click save note button
+  And alert box title should be "Success"
+  And alert box message should be "Note is added successfully."
+  And I click notification dialog if dialogExist
+  And I click note button
+  And verifyNote is defined by javascript
+    """
+    (function(){
+    var result=false;
+      if($('#note-input').val()=="$<expectedNoteText>"){
+        result=true;
+      }
+    return result;
+    })()
+    """
+  And verifyNote should be "true"
+  And I wait for cancelButton
+  And I click cancelButton
+  And I click first page button
+  And I collapse alert for fund "$<fundName>" having status "$<status>"
+  And I wait 2 seconds
+  And I unlock fund "$<fundName>" having status "$<status>"
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to select row
+#--------------------------------------------------------------------------------------
+Scenario: I select fund "<fundName>" having status "<status>"
+  And selectAlertNotChecked is defined by javascript
+    """
+    (function (){
+      var rowIndex='';var result='';
+      $('.ag-body-viewport [role="row"] ').each(function(index){
+
+        if($(this).text().indexOf('$<fundName>$<status>')>=0){
+        rowIndex=$(this).attr('row-index');
+        return false;
+      }
+      });
+      if(rowIndex!=''){
+        if(($('[row-index="'+rowIndex+'"] span[class="ag-selection-checkbox"] [class="ag-icon ag-icon-checkbox-checked ag-hidden"]').length)==1){
+          result=true;
+        }else{
+          result=false;
+        }
+      }
+      return result;
+  	})()
+    """
+  Given select alert checkbox can be located by javascript
+    """
+    (function (){
+      var rowIndex='';
+      $('.ag-body-viewport [role="row"] ').each(function(index){
+
+        if($(this).text().indexOf('$<fundName>$<status>')>=0){
+        rowIndex=$(this).attr('row-index');
+        return false;
+      }
+      });
+      return $('[row-index="'+rowIndex+'"] span[class="ag-selection-checkbox"]').get(0);
+  	})()
+    """
+  And I click select alert checkbox if selectAlertNotChecked
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to expand row for specific fund
+#--------------------------------------------------------------------------------------
+Scenario: I expand alert for fund "<fundName>" having status "<status>"
+  And isContracted is defined by javascript
+  """
+  (function (){
+    var rowIndex=''; var result='';
+    $('.ag-body-viewport [role="row"] ').each(function(index){
+
+      if($(this).text().indexOf('$<fundName>$<status>')>=0){
+      rowIndex=$(this).attr('row-index');
+      return false;
+    }
+    });
+    if(rowIndex!=''){
+      if(($('[row-index="'+rowIndex+'"] [ref="eExpanded"]').hasClass("ag-hidden"))==true){
+        result=true;
+      }else{
+        result=false;
+      }
+    }
+    return result;
+  })()
+  """
+  And expand button can be located by javascript
+    """
+    (function (){
+      var rowIndex='';
+      $('.ag-body-viewport [role="row"] ').each(function(index){
+
+        if($(this).text().indexOf('$<fundName>$<status>')>=0){
+          rowIndex=$(this).attr('row-index');
+          return false;
+        }
+      });
+      return $('[row-index="'+rowIndex+'"] span[ref="eContracted"]').get(0);
+  	})()
+    """
+  And I click expand button if isContracted
+  And I wait 10 seconds
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to collapse row for specific fund
+#--------------------------------------------------------------------------------------
+Scenario: I collapse alert for fund "<fundName>" having status "<status>"
+And isExpanded is defined by javascript
+"""
+(function (){
+  var rowIndex=''; var result='';
+  $('.ag-body-viewport [role="row"] ').each(function(index){
+
+    if($(this).text().indexOf('$<fundName>$<status>')>=0){
+    rowIndex=$(this).attr('row-index');
+    return false;
+  }
+  });
+  if(rowIndex!=''){
+  if(($('[row-index="'+rowIndex+'"] [ref="eContracted"]').hasClass("ag-hidden"))==true){
+    result=true;
+  }else{
+    result=false;
+  }
+}
+  return result;
+})()
+"""
+
+Given expand button can be located by javascript
+  """
+  (function (){
+    var rowIndex='';
+    $('.ag-body-viewport [role="row"] ').each(function(index){
+
+      if($(this).text().indexOf('$<fundName>$<status>')>=0){
+      rowIndex=$(this).attr('row-index');
+      return false;
+    }
+    });
+    return $('[row-index="'+rowIndex+'"] span[ref="eExpanded"]').get(0);
+	})()
+  """
+  And I click expand button if isExpanded
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to verify email preview
+#--------------------------------------------------------------------------------------
+Scenario: I verify <emailAndPreview> data
+  And previewData is defined by javascript
+    """
+      (function () { return $('#dynamic-iframe').contents().find('body').text().replace(/Dear All.*Please/,'Please').replace(/if applicable/,'applicable').replace(/\n/g,'').replace(/"/g,'\\"')})()
+    """
+  And previewData should be "${$<emailAndPreview>}"
+
+
+@StepDef
+#--------------------------------------------------------------------------------------
+#Step to verify fund is locked
+#--------------------------------------------------------------------------------------
+Scenario:I verify fund "<fundName>" with status "<status>" is locked
+  And lockedButton can be located by javascript
+    """
+    (function (){
+      var rowIndex='';
+      $('.ag-body-viewport [role="row"] ').each(function(index){
+
+        if($(this).text().indexOf('$<fundName>$<status>')>=0){
+        rowIndex=$(this).attr('row-index');
+        return false;
+      }
+      });
+      return $('[row-index="'+rowIndex+'"] i[class="fa fa-lock"]').get(0);
+    })()
+   """
+   And lockedButton should be displayed
+
+@StepDef
+#--------------------------------------------------------------------------------------
+#Step to verify fund is unlocked
+#--------------------------------------------------------------------------------------
+Scenario:I verify fund "<fundName>" with status "<status>" is unlocked
+  And lockedButtonStatus is defined by javascript
+   """
+   (function (){
+     var rowIndex='';var result=false;
+     $('.ag-body-viewport [role="row"] ').each(function(index){
+
+       if($(this).text().indexOf('$<fundName>$<status>')>=0){
+       rowIndex=$(this).attr('row-index');
+       return false;
+     }
+     });
+     if( $('[row-index="'+rowIndex+'"] i[class="fa fa-lock"]').length==0){
+      result=true;
+     }
+     return result;
+   })()
+  """
+  And lockedButtonStatus should be "true"
+
+@StepDef
+##############################################################
+#-------------------------------------------------------------
+#Step to expand  all rows
+#Example:And I expand all rows
+#-------------------------------------------------------------
+Scenario: I expand all rows on alert
+  And more option menu can be located by javascript "$('[col-id="ag-Grid-AutoColumn"] span[class="ag-icon ag-icon-menu"]').get(0)"
+  And I click more option menu
+  And notOnGroupTab is defined by javascript "!$('[ref="tabHeader"] [class="ag-icon ag-icon-menu"]').parent().hasClass("ag-tab-selected")"
+  And I click group menu if notOnGroupTab
+  And Expand all can be located by javascript "$('.ag-menu span:contains("Expand All")').get(0)"
+  And I click Expand all
+  And I wait 3 seconds
+
+@StepDef
+##############################################################
+#-------------------------------------------------------------
+#Step to collpase all rows
+#Example:And I collapse all rows
+#-------------------------------------------------------------
+Scenario: I collapse all rows on alert
+  And more option menu can be located by javascript "$('[col-id="ag-Grid-AutoColumn"] span[class="ag-icon ag-icon-menu"]').get(0)"
+  And I click more option menu
+  And notOnGroupTab is defined by javascript "!$('[ref="tabHeader"] [class="ag-icon ag-icon-menu"]').parent().hasClass("ag-tab-selected")"
+  And I click group menu if notOnGroupTab
+  And collpase all can be located by javascript "$('.ag-menu span:contains("Collapse All")').get(0)"
+  And I click collpase all
+  And I wait 6 seconds
+
+
+@StepDef
+##############################################################
+#-------------------------------------------------------------
+#Step to get alerts details extract
+#Example:And I verify alerts for "<testcaseNo>"
+#-------------------------------------------------------------
+Scenario: I verify alerts for "<testcaseNo>"
+  And I right click first row of alertsGrid
+  And I wait for export button
+  And I click export button
+  And export to csv button should be displayed
+  And export to excel button should be displayed
+  And dropdownList is defined by javascript "(function(){return $('.ag-menu').length})()"
+  And dropdownList should be "2"
+  And I click export to excel button
+  And I execute system process "java  -DfileName="${baseDirectory}data\${moduleName}\actual\$<testcaseNo>.xls" -DbrowserName=${gwen.web.browser} -jar C:\QaAutomation\Utilities\saveCsv.jar"
+  And I execute system process "${baseDirectory}bat\compareResult.bat "${moduleName}" "$<testcaseNo>" "${moduleName}" "${moduleName}" "${baseDirectory}data""
+  And compareResult is defined by system process "${baseDirectory}bat\result.bat"
+  And testcaseIs is "$<testcaseNo>:''"
+  And I verify testresult of testcasesno "${testcaseNoIs}" for each testcaseNoIs in testcaseIs delimited by ":"
+
+
+@StepDef
+##############################################################
+#-------------------------------------------------------------
+#Step to apply alert filter
+#Example:And I apply alert filter "Account:HDFAUDAC1"
+#-------------------------------------------------------------
+Scenario: I apply alert filter "<filter>"
+    And filterIs is "$<filter>"
+    And I enter alert filter "${selectFilter}" for each selectFilter in filterIs delimited by ";"
+
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to filter fund
+#Example:  I enter alert filter "<filter>"
+#-----------------------------------------------------------------
+Scenario: I enter alert filter "<filter>"
+  And I scroll to top of page
+  And applyFilter is "$<filter>"
+  And filterName is defined by javascript
+  """
+  (function getFilterName() {
+    arrayIs = "${applyFilter}".split(':');
+    return arrayIs[0];
+  })()
+  """
+  And filterNameIs is "${filterName}"
+  And definedValue is defined by javascript
+  """
+  (function getFilterName() {
+    arrayIs = "${applyFilter}".split(':');
+    return arrayIs[1];
+  })()
+  """
+  And filterValueIs is "${definedValue}"
+  And alertValue is present is defined by javascript "(function() {return "${filterNameIs}" != "''"})();"
+  And more option menu can be located by javascript "$('#alert-grid span:contains("${filterNameIs}")').parent().siblings().get(0)"
+  And I click more option menu
+  And I wait for filter menu
+  And notOnFilterTab is defined by javascript "!$('[ref="tabHeader"] [class="ag-icon ag-icon-filter"]').parent().hasClass("ag-tab-selected")"
+  And I click filter menu if notOnFilterTab
+  And setAlertFilterInputField can be located by id "filterText"
+  And I type "${filterValueIs}" in setAlertFilterInputField if alertValue is present
+  And I wait 3 seconds if alertValue is present
+  ##WA##And I send "BACK_SPACE" to setAlertFilterInputField if alertValue is present
+  And I scroll to top of page
+  And I click heading
+
+
+@StepDef
+##############################################################
+#-------------------------------------------------------------
+#Step to remove alert filter
+#Example:And I alert ladder filter "Account:HDFAUDAC1"
+#-------------------------------------------------------------
+Scenario: I remove following alert filter "<filter>"
+    And filterIs is "$<filter>"
+    And I remove alert filter "${selectFilter}" for each selectFilter in filterIs delimited by ";"
+
+
+@StepDef
+##################################################################
+#-----------------------------------------------------------------
+#Step to remove alert filter
+#Example: I remove alert filter
+#-----------------------------------------------------------------
+Scenario: I remove alert filter "<filter>"
+  And I scroll to top of page
+  And applyFilter is "$<filter>"
+  And filterName is defined by javascript
+  """
+  (function getFilterName() {
+    arrayIs = "${applyFilter}".split(':');
+    return arrayIs[0];
+  })()
+  """
+  And filterNameIs is "${filterName}"
+  And definedValue is defined by javascript
+  """
+  (function getFilterName() {
+    arrayIs = "${applyFilter}".split(':');
+    return arrayIs[1];
+  })()
+  """
+  And filterValueIs is "${definedValue}"
+  And alertValue is present is defined by javascript "(function() {return "${filterNameIs}" != "''"})();"
+  And more option menu can be located by javascript "$('#alert-grid span:contains("${filterNameIs}")').parent().siblings().get(0)"
+  And I click more option menu
+  And I wait for filter menu
+  And notOnFilterTab is defined by javascript "!$('[ref="tabHeader"] [class="ag-icon ag-icon-filter"]').parent().hasClass("ag-tab-selected")"
+  And I click filter menu if notOnFilterTab
+  And setAlertFilterInputField can be located by id "filterText"
+  And I clear setAlertFilterInputField if alertValue is present
+  And I type "a" in setAlertFilterInputField
+  And I send "BACK_SPACE" to setAlertFilterInputField if alertValue is present
+  And I wait 3 seconds if alertValue is present
+  And I scroll to top of page
+  And I click heading
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to select row for fund
+#--------------------------------------------------------------------------------------
+Scenario: I select row fund "<fundName>" having status "<status>"
+  And row can be located by javascript
+      """
+      (function (){
+        var rowIndex='';
+        $('.ag-body-viewport [role="row"] ').each(function(index){
+
+          if($(this).text().indexOf('$<fundName>$<status>')>=0){
+          rowIndex=$(this).attr('row-index');
+          return false;
+        }
+        });
+        return $('[row-index="'+rowIndex+'"] span[ng-click="openLadderTab()"]:contains("$<fundName>")').get(0);
+    	})()
+  """
+  And I click row
+  And I switch to the child window
+  And heading should be "Cash Ladder"
+  And I verify selected perspective is "Fund/Currency/Account/Category"
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to close ladder wiindow
+#Example: And I close ladder window and verify alerts page gets displayed
+#--------------------------------------------------------------------------------------
+Scenario:I close ladder window and verify alerts page gets displayed
+  And I close the child window
+
+
+@StepDef
+@DataTable(header="top")
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verifies email preview
+#Example:And I verify email preview
+#----------------------------------------------------------------------------------------
+Scenario:I verify email preview
+    And I verify email preview for fund "${data[fundName]}" having status "${data[status]}" for each data record
+
+
+@StepDef
+Scenario:I verify email preview for fund "<fundName>" having status "<status>"
+  And I select fund "$<fundName>" having status "$<status>"
+  And I click emailAndPreview
+  And I wait for cancelButton
+  And mailSubject should be "SUBJECT: URGENT POTENTIAL SHORTAGE IN ${emailHeading$<fundName>}"
+  And I verify emailAndPreview$<fundName> data
+  And I wait for cancelButton
+  And I click cancelButton
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Chnaging cms-service.properties
+#Example: And I change cms service properties "NoDays"
+#----------------------------------------------------------------------------------------
+Scenario:I change cms service properties "<property>"
+  And I execute system process "cmd /c cd ..\..\..\Utilities\Pipe\Artifacts && QueueSender.bat ${activemq.ip} ${activemq.port} "Execute" "${appServerAppDir}/HSS/script/ChangeCMSSericeProperties.sh $<property>" "EODQ" "
+  ##WA##And I wait 1200 seconds
+  And I wait for the "RESTART.DONE" message
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to verify sent mail
+#--------------------------------------------------------------------------------------
+Scenario:I verify mail for fund "<fundName>" having account "<accountName>"
+  And result is defined by system process "${baseDirectory}bat\emailParser.bat $<accountName> $<fundName>"
+  And hashCode is defined by system process "${baseDirectory}bat\getMailHashCode.bat "${result}""
+  And hashCodeResult is defined by system process "${baseDirectory}bat\verifyEmailHashCode.bat "$<fundName>" "$<accountName>" "${hashCode}""
+  And hashCodeResult should contain "Pass"
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to verify locking of alert for users
+#--------------------------------------------------------------------------------------
+Scenario: I verify "<userName>" user locked fund "<fundName>"
+    And lockedToInfo should be "Locked to: $<userName>"
+
+@StepDef
+Scenario: I verify <add> button is not present
+ And buttonNotDisplayed is defined by javascript "(function() {return $('a:contains("$<add>")').length==0} )()"
+ And buttonNotDisplayed should be "true"
+
+
+ @StepDef
+ Scenario: I verify already locked fund "<fundName>" having status "<status>"
+     And I select fund "$<fundName>" having status "$<status>"
+     And I verify "${functional.userName}" user locked fund "$<fundName>"
+     And statusIsClosed is defined by javascript "(function() {return "$<status>" == "Closed"})();"
+     And statusIsOpen is defined by javascript "(function() {return "$<status>" != "Closed"})();"
+     And I verify Add narrative button is not present
+     And I verify Email preview button is enabled
+     And I verify Show narrative button is enabled
+     And I verify Close button is disabled
+     And I verify Lock to Me button is disabled
+     And I verify Unlock button is disabled
+     And I verify Force Unlock button is enabled if statusIsOpen
+     And I verify Force Unlock button is disabled if statusIsClosed
+     And I click emailAndPreview
+     And I verify Send & Close button is disabled
+     And I click cancelButton
+
+ @StepDef
+ Scenario: I verify there are no alerts available
+    And no alerts should contain "There are no alerts available."
+
+@StepDef
+Scenario: I force unlock fund "<fundName>" having status "<status>"
+    And I select fund "$<fundName>" having status "$<status>"
+    And I click forceUnlockAlert
+    And alert box title should be "Success"
+    And alert box message should be "Lock on alert on fund $<fundName> is released."
+    And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+    And I click notification dialog if dialogExist
+
+@StepDef
+Scenario: I verify user can not view all alerts
+   And no data should be "${no data message}"
+
+@StepDef
+Scenario:I verify user unable to view alerts screen
+Given I navigate to module alert
+ And authorization message should be "${not authorised message}"
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to verify group selector for user
+#Example: And I verify group selector for "functional" user
+#--------------------------------------------------------------------------------------
+Scenario: I verify group selector for "<user>" user
+  And groups associated is defined by sql "select listagg( NAME, ',') within group (order by NAME) from (SELECT * FROM SECURITY_GROUP WHERE id IN (SELECT GROUP_ID FROM SECURITY_GROUP_USER WHERE USER_ID='${$<user>.userName}'))" in the ${dbName} database
+  And I verify group "${groupIs}" can be or selected on alerts dashboard for each groupIs in groups associated delimited by ","
+
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to verify group can be or selected on alerts dashboard
+#Example: And I verify group "HPF Group" can be or selected on alerts dashboard
+#--------------------------------------------------------------------------------------
+Scenario:I verify group "<groupName>" can be or selected on alerts dashboard
+  And groupSelect is defined by javascript
+  """
+  (function(){
+  var result=false;
+    $('[ng-model="selectedGroups"] option').each(function(){
+    if($(this).text()=="$<groupName>")
+      result=true;
+    });
+    return result;
+  })()
+  """
+  And groupSelect should be "true"
+
+
+@StepDef
+@DataTable(header="top")
+###################################################
+#--------------------------------------------------
+#Step to select balance level alert
+#Example:
+# And I select balance level alert
+#      |Fund|Status|Account Number|CCY|Amount|Value Date|
+#      |HGF|Open|HGFJPYAC1|JPY|-992,691,982.35041|24/09/2017|
+#--------------------------------------------------
+Scenario: I select balance level alert
+ And I select balance level alert with "${data[Fund]}" "${data[Status]}" "${data[Account Number]}" "${data[CCY]}" "${data[Amount]}" "${data[Value Date]}" for each data record
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to select row balance level alert
+#Example:
+#And I select balance level alert with "HGF" "Open" "HGFJPYAC1" "JPY" "-992,691,982.35041" "24/09/2017"
+#--------------------------------------------------------------------------------------
+Scenario: I select balance level alert with "<Fund>" "<Status>" "<Account Number>" "<CCY>" "<Amount>" "<Value Date>"
+  And I select fund "$<Fund>" having status "$<Status>"
+  And I expand alert for fund "$<Fund>" having status "$<Status>"
+  And I locate checkbox for alert with "$<Fund>" "$<Account Number>" "$<CCY>" "$<Amount>" "$<Value Date>"
+  And I click alert selection checkbox
+  And alert box title should be "Success"
+  And alert box message should be "Alert for Fund $<Fund>, Account $<Account Number>, Value Date $<Value Date> is included."
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+  And I click first page button
+  And I verify alert for "$<Account Number>" "$<CCY>" "$<Amount>" "$<Value Date>" is included in email
+  And I collapse alert for fund "$<Fund>" having status "$<Status>"
+
+  @StepDef
+  @DataTable(header="top")
+  ###################################################
+  #--------------------------------------------------
+  #Step to unselect balance level alert
+  #Example:
+  # And I unselect balance level alert
+  #     |Fund|Status|Account Number|CCY|Amount|Value Date|
+  #     |HGF|Open|HGFJPYAC1|JPY|-992,691,982.35041|24/09/2017|
+  #--------------------------------------------------
+  Scenario: I unselect balance level alert
+   And I unselect balance level alert with "${data[Fund]}" "${data[Status]}" "${data[Account Number]}" "${data[CCY]}" "${data[Amount]}" "${data[Value Date]}" for each data record
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to unselect row balance level alert
+#Example:
+#And I unselect balance level alert with "HGF" "Open" "HGFJPYAC1" "JPY" "-992,691,982.35041" "24/09/2017"
+#--------------------------------------------------------------------------------------
+Scenario:I unselect balance level alert with "<Fund>" "<Status>" "<Account Number>" "<CCY>" "<Amount>" "<Value Date>"
+  And I select fund "$<Fund>" having status "$<Status>"
+  And I expand alert for fund "$<Fund>" having status "$<Status>"
+  And I locate checkbox for alert with "$<Fund>" "$<Account Number>" "$<CCY>" "$<Amount>" "$<Value Date>"
+  And I click alert selection checkbox
+  And alert box title should be "Success"
+  And alert box message should be "Alert for Fund $<Fund>, Account $<Account Number>, Value Date $<Value Date> is excluded."
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+  And I click first page button
+  And I verify alert for "$<Account Number>" "$<CCY>" "$<Amount>" "$<Value Date>" is excluded from email
+  And I collapse alert for fund "$<Fund>" having status "$<Status>"
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to locate checkbox for alert
+#Example:
+#And I locate checkbox for alert with "HGF" "HGFJPYAC1" "JPY" "-992,691,982.35041" "24/09/2017"
+#--------------------------------------------------------------------------------------
+Scenario: I locate checkbox for alert with "<Fund>" "<Account Number>" "<CCY>" "<Amount>" "<Value Date>"
+  And alert selection checkbox can be located by javascript
+    """
+    (function(){
+       rowIndex=""
+       function search(){
+    	   $('[class*="ag-body-viewport"] [role="row"]').each(function(index){
+    			if($(this).find("span[ng-click='openLadderTab()']").text().trim()=="$<Account Number>")
+    				 if($(this).find("div[col-id='ccy']").text().trim()=="$<CCY>")
+    					   if($(this).find("div[col-id='amount']").text().trim()=="$<Amount>")
+    							  if($(this).find("div[col-id='valueDate']").text().trim()=="$<Value Date>")
+    									  rowIndex=$(this).attr('row-index');
+    	   });
+       }
+       search();
+    	 if(rowIndex==""){
+    		 $('button[ref="btNext"]').click();
+    		 search();
+    	 }
+       return $('[row-index="'+rowIndex+'"] span[class="ag-selection-checkbox ng-scope"]').get(0);
+    })()
+    """
+
+@StepDef
+#######################################################################################
+#--------------------------------------------------------------------------------------
+#Step to locate note button for alert
+#Example:
+#And I locate note button for alert with "HGF" "HGFJPYAC1" "JPY" "-992,691,982.35041" "24/09/2017"
+#--------------------------------------------------------------------------------------
+Scenario: I locate note button for alert with "<Fund>" "<Account Number>" "<CCY>" "<Amount>" "<Value Date>"
+  And note button can be located by javascript
+  """
+    (function(){
+	   var rowIndex="";
+     function search(){
+  	   $('[class*="ag-body-viewport"] [role="row"]').each(function(index){
+  		    if($(this).find("span[ng-click='openLadderTab()']").text().trim()=="$<Account Number>")
+  			     if($(this).find("div[col-id='ccy']").text().trim()=="$<CCY>")
+  				       if($(this).find("div[col-id='amount']").text().trim()=="$<Amount>")
+  					          if($(this).find("div[col-id='valueDate']").text().trim()=="$<Value Date>")
+  						              rowIndex=$(this).attr('row-index');
+  	    });
+      }
+      search();
+      if(rowIndex==""){
+        $('button[ref="btNext"]').click();
+        search();
+      }
+	   return $('[row-index="'+rowIndex+'"] [col-id="lockedTo"]').get(0);
+    })()
+    """
+
+@StepDef
+@DataTable(header="top")
+#############################################################
+#------------------------------------------------------------
+#Step to verify excluded mails
+#Example: I verify excluded mails
+#|Fund|Status|Account Number|CCY|Amount|Value Date|
+#|HPF|OPEN|HPFEURAC1|EUR|-17,734,261,075.39|24/09/2017|
+#------------------------------------------------------------
+  Scenario: I verify included mails
+    And I verify alert for "${data[Account Number]}" "${data[CCY]}" "${data[Amount]}" "${data[Value Date]}" is included in email for each data record
+
+@StepDef
+#############################################################
+#------------------------------------------------------------
+#Step to verify the selected alert is included in email
+#Example: And I verify alert for "HGFJPYAC1" "JPY" "-992,691,982.35041" "24/09/2017" is included in email
+#------------------------------------------------------------
+Scenario: I verify alert for "<Account Number>" "<CCY>" "<Amount>" "<Value Date>" is included in email
+  And result is defined by javascript
+    """
+    (function(){
+      var result="";
+      var rowIndex="";
+      function search(){
+        $('[class*="ag-body-viewport"] [role="row"]').each(function(index){
+           if($(this).find("span[ng-click='openLadderTab()']").text().trim()=="$<Account Number>")
+              if($(this).find("div[col-id='ccy']").text().trim()=="$<CCY>")
+                  if($(this).find("div[col-id='amount']").text().trim()=="$<Amount>")
+                       if($(this).find("div[col-id='valueDate']").text().trim()=="$<Value Date>")
+                             rowIndex=$(this).attr('row-index');
+          });
+        }
+        search();
+        if(rowIndex==""){
+      		 $('button[ref="btNext"]').click();
+  		     search();
+  	    }
+       if($('[row-index="'+rowIndex+'"] span[class="ag-selection-checkbox ng-scope"] span.ag-icon-checkbox-unchecked').hasClass("ag-hidden")==true)
+       {
+        result="Done";
+       }
+     return result;
+    })()
+    """
+    And result should be "Done"
+    And I click first page button
+
+
+@StepDef
+@DataTable(header="top")
+#############################################################
+#------------------------------------------------------------
+#Step to verify excluded mails
+#Example: I verify excluded mails
+#|Fund|Status|Account Number|CCY|Amount|Value Date|
+#|HPF|OPEN|HPFEURAC1|EUR|-17,734,261,075.39|24/09/2017|
+#------------------------------------------------------------
+  Scenario: I verify excluded mails
+    And I verify alert for "${data[Account Number]}" "${data[CCY]}" "${data[Amount]}" "${data[Value Date]}" is excluded from email for each data record
+
+@StepDef
+#############################################################
+#------------------------------------------------------------
+#Step to verify the unselected alert is excluded from email
+#Example: And I verify alert for "HGFJPYAC1" "JPY" "-992,691,982.35041" "24/09/2017" is excluded from email
+#------------------------------------------------------------
+Scenario: I verify alert for "<Account Number>" "<CCY>" "<Amount>" "<Value Date>" is excluded from email
+  And result is defined by javascript
+    """
+    (function(){
+      var result="";
+      var rowIndex="";
+      function search(){
+        $('[class*="ag-body-viewport"] [role="row"]').each(function(index){
+           if($(this).find("span[ng-click='openLadderTab()']").text().trim()=="$<Account Number>")
+              if($(this).find("div[col-id='ccy']").text().trim()=="$<CCY>")
+                  if($(this).find("div[col-id='amount']").text().trim()=="$<Amount>")
+                       if($(this).find("div[col-id='valueDate']").text().trim()=="$<Value Date>")
+                             rowIndex=$(this).attr('row-index');
+          });
+        }
+        search();
+        if(rowIndex==""){
+      		 $('button[ref="btNext"]').click();
+  		     search();
+  	    }
+       if($('[row-index="'+rowIndex+'"] span[class="ag-selection-checkbox ng-scope"] span.ag-icon-checkbox-checked').hasClass("ag-hidden")==true)
+       {
+       result="Done";
+       }
+     return result;
+    })()
+    """
+    And result should be "Done"
+    And I click first page button
+
+
+@StepDef
+#############################################################
+#------------------------------------------------------------
+#Step to verify by default all the alerts are included in email
+#Example: And I verify all the alerts for fund "HGF" having status "Closed" are included in email
+#------------------------------------------------------------
+Scenario:I verify all the alerts for fund "<Fund>" having status "<Status>" are included in email
+  And I select fund "$<Fund>" having status "$<Status>"
+  And I expand alert for fund "$<Fund>" having status "$<Status>"
+  And result is defined by javascript
+  """
+  (function(){
+       var result="";
+  	function search(){
+        $('span[class="ag-selection-checkbox ng-scope"] ').each(function(){
+      		if($(this).parent().attr("title").trim()=="Included in email."){
+      			result="Done";
+      		}else{
+      			result="";
+      			return false;
+      		}
+        });
+  	}
+  	search();
+  	if($('button[ref="btNext"]').attr("disabled")!="disabled"){
+  		$('button[ref="btNext"]').click();
+  		search();
+  	}
+        return result;
+   })()
+  """
+  And result should be "Done"
+  And I click first page button
+  And negativeInRed is defined by javascript
+  """
+  (function(){
+    var result=true;
+	function search(){
+		$('[col-id="amount"][role="gridcell"]').each(function(){
+			if($(this).css('color')!= "rgb(224, 67, 62)"){
+			  result=false;
+			}
+		});
+	}
+	search();
+	if($('button[ref="btNext"]').attr("disabled")!="disabled"){
+			$('button[ref="btNext"]').click();
+			search();
+		}
+    return result;
+  })()
+  """
+  And negativeInRed should be "true"
+  And I click first page button
+  And I collapse alert for fund "$<Fund>" having status "$<Status>"
+
+
+@StepDef
+@DataTable(header="top")
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verify email preview data and send mail and closing of alert
+#Example:And I verify closing alert and sent mail
+#----------------------------------------------------------------------------------------
+Scenario:I verify closing alert and sent mail
+    And I verify closing alert and sent mail for fund "${data[fundName]}" having status "${data[status]}" and account code "${data[accountCode]}" with selection "${data[selection]}" for each data record
+
+@StepDef
+Scenario:I verify closing alert and sent mail for fund "<fundName>" having status "<status>" and account code "<accountCode>" with selection "<selection>"
+  And I select fund "$<fundName>" having status "$<status>"
+  And I lock fund "$<fundName>" having status "$<status>"
+  And I click emailAndPreview
+  And I wait for cancelButton
+  And mailSubject should be "SUBJECT: URGENT POTENTIAL SHORTAGE IN ${emailHeading$<fundName>}"
+  And I verify emailAndPreview$<fundName>$<selection> data
+  And I click send and close button
+  And alert box title should be "Success"
+  And alert box message should be "Email has been sent to the recipient."
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+  And I verify mail for fund "${emailHeading$<fundName>}" having account "$<accountCode>"
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verify closing of alert without sending mail
+#Example:And I close alert "HGF" having status "OPEN"
+#----------------------------------------------------------------------------------------
+Scenario:I close alert "<fundName>" having status "<status>"
+  And I select fund "$<fundName>" having status "$<status>"
+  And I lock fund "$<fundName>" having status "$<status>"
+  And I click closeAlert
+  And alert box title should be "Success"
+  And alert box message should be "Alert closure succeeded."
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Verify closing of alert without sending mail
+#Example:And I verify locking other fund "HGF" having status "OPEN"
+#----------------------------------------------------------------------------------------
+Scenario:I verify locking other fund "<fundName>" having status "<status>"
+  And I select fund "$<fundName>" having status "$<status>"
+  And I verify Lock to Me button is disabled
+
+@StepDef
+@DataTable(header="top")
+###################################################
+#--------------------------------------------------
+#Step to verify fund details are not on dashboard
+#Example:
+# And I verify fund details are not on dashboard
+#    |Fund|Status|Account Number|CCY|Amount|Value Date|
+#    |HGF|Open|HGFJPYAC1|JPY|-992,691,982.35041|24/09/2017|
+#--------------------------------------------------
+Scenario: I verify fund details are not on dashboard
+  And I verify fund details are not on dashboard with "${data[Fund]}" "${data[Status]}" "${data[Account Number]}" "${data[CCY]}" "${data[Amount]}" "${data[Value Date]}" for each data record
+
+@StepDef
+Scenario: I verify fund details are not on dashboard with "<Fund>" "<Status>" "<Account Number>" "<CCY>" "<Amount>" "<Value Date>"
+  And I select fund "$<Fund>" having status "$<Status>"
+  And I expand alert for fund "$<Fund>" having status "$<Status>"
+  And alertAbsent is defined by javascript
+    """
+    (function(){
+       var rowIndex="";var absent=true;
+       function search(){
+         $('[class*="ag-body-viewport"] [role="row"]').each(function(index){
+          if($(this).find("span[ng-click='openLadderTab()']").text().trim()=="$<Account Number>")
+             if($(this).find("div[col-id='ccy']").text().trim()=="$<CCY>")
+                 if($(this).find("div[col-id='amount']").text().trim()=="$<Amount>")
+                    if($(this).find("div[col-id='valueDate']").text().trim()=="$<Value Date>")
+                        absent=false;
+         });
+       }
+       search();
+       if(rowIndex=="" && $('button[ref="btNext"]').attr("disabled")!="disabled"){
+         $('button[ref="btNext"]').click();
+         search();
+       }
+       return absent;
+    })()
+    """
+  And alertAbsent should be "true"
+  And I click first page button
+  And I collapse alert for fund "$<Fund>" having status "$<Status>"
+
+
+@StepDef
+@DataTable(header="top")
+###################################################
+#--------------------------------------------------
+#Step to verify fund details are not in mail preview
+#Example:
+# And I verify fund details are not in mail preview
+#    |Account Code|Account Full Name|Amount|Value Date|Opening Balance	|FX|Cash|Trade|
+#    |HPFUSDAC2|HPFUSDAC2|USD -379,306,654.34|22-Sep-2017|-4,983,050,663.62|-16,904,010,497.07|387,383,586.86|2,057,438,291.50|
+#--------------------------------------------------
+Scenario:  I verify fund details are not in mail preview
+ And I verify fund details are not in mail preview "${data[Account Code]}" "${data[Account Full Name]}" "${data[Amount]}" "${data[Value Date]}" for each data record
+
+@StepDef
+Scenario: I verify fund details are not in mail preview "<Account Code>" "<Account Full Name>" "<Amount>" "<Value Date>"
+And fundDetailsAbsent is defined by javascript
+    """
+    (function () {
+        value=true;indexIs='';
+        if($('#dynamic-iframe').contents().find('p').length==0){
+			     value=false;
+		    }
+        $('#dynamic-iframe').contents().find('p').each(function(el){
+               						if ($(this).text().replace(/,/g,'')=="Account Code: $<Account Code>Account Full Name: $<Account Full Name>Amount: $<Amount>Value Date: $<Value Date>")
+                  { indexIs=el-3;
+                    value = false;
+                    return false;
+                  }
+      })
+      return value;
+      })()
+    """
+And fundDetailsAbsent should be "true"
+
+
+@StepDef
+###############################################
+#----------------------------------------------
+#Step to extract alert data by scrolling on UI
+#----------------------------------------------
+Scenario: I get the alert data from UI
+  And the result is defined by javascript
+  """
+  (function setTimeout () {
+  var result="";
+  var rowCount = $('.ag-body.ag-row-no-animation [role="row"]').length
+    var columnCount = $('[class="ag-header-container"] [class="ag-header-cell-label"]').length
+     y = [];failedNegativeCheck=[];
+    var fixedheaderCount = $('.ag-pinned-left-header [class="ag-header-cell-label"]').length
+     x = [];n=[];
+     currentPage=parseInt($('span [ref="lbCurrent"]').text());
+      $('.ag-pinned-left-header [class="ag-header-cell-label"]').each(function(){console.log($(this).text());x.push($( this ).text().trim())})
+
+  $('.ag-header-container .ag-header-cell').each(function(){console.log($(this).attr("col-id").trim().replace(/  /g,""));n.push($( this ).attr("col-id").trim().replace(/  /g,""))});
+  if($('#alert-grid [ref="btFirst"]').attr("disabled")=="disabled"){
+    $('.ag-header-container .ag-header-cell span[role="columnheader"]').each(function(){x.push($(this).text().trim())});
+      y.push(x);
+  }
+
+      for (i = 1; i <= rowCount; i++) {
+          x = [];
+          for(c in n) {
+                        x.push($('[class*="ag-body-container"] [role="row"]:nth-child('+i+') [col-id="'+ n[c]+'"]').text().trim());
+                        if ($('[class*="ag-body-container"] [role="row"]:nth-child('+i+') [col-id="amount"]').text().trim().indexOf("-") >= 0)
+                          if ($('[class*="ag-body-container"] [role="row"]:nth-child('+i+') [col-id="amount"]').css('color') != "rgb(224, 67, 62)")
+                            failedNegativeCheck.push($( this ).text().trim());
+              };
+              if(x[1]!=""||x[0]!=""||x[2]!=""||x[3]!=""){console.log("yes");y.push(x)}
+              if(failedNegativeCheck.length==0)
+                if(currentPage==pageCount && currentPage<=totalPage)
+                     result = "Done";
+        }
+
+    return result;
+    })();
+    """
+  Then the result should be "Done"
+
+
+@StepDef
+##############################################################
+#-------------------------------------------------------------
+#Step to extract balances from alert grid
+#-------------------------------------------------------------
+Scenario: I extracts balances of alert grid
+  And I wait 3 seconds
+  And I execute javascript "repeat=1"
+  And takeExtract is defined by javascript "(function(){ console.log(repeat); return repeat!=0 })()"
+  And I extracts balances from alert grid while takeExtract using 1000 millisecond delay and 10 minute timeout
+
+
+@StepDef
+Scenario: I extracts balances from alert grid
+
+  And the executionResult is defined by javascript
+  """
+  (function(){
+    var str="";
+    function getData() {
+    console.log("ada");
+    var rowCount = $('.ag-body.ag-row-no-animation [role="row"]').length;
+    var columnCount = $('[class="ag-header-container"] [class="ag-header-cell-label"]').length;
+    var fixedheaderCount = $('.ag-pinned-left-header [class="ag-header-cell-label"]').length;
+    x = [];n=[];failedNegativeCheck=[];
+        duplicate = 0;
+        for (i = 1; i <=1; i++) {
+     console.log("i is ", i);
+     $('.ag-header-container [class="ag-header-cell ag-header-cell-sortable"]').each(function(){console.log($(this).attr("col-id").trim().replace(/  /g,""));n.push($( this ).attr("col-id").trim().replace(/  /g,""))});
+     if($('#alert-grid [ref="btFirst"]').attr("disabled")=="disabled")
+      $('.ag-header-container [class="ag-header-cell ag-header-cell-sortable"] span[role="columnheader"]').each(function(){x.push($(this).text().trim())});
+
+    for(c in n) {console.log(n[c])}
+      for(l=0;l<x.length;l++)
+        {  if (y[0].indexOf(x[l]) >= 0) { duplicate++ };if (y[0].indexOf(x[l]) < 0) { y[0].push(x[l]) } }
+    }
+
+        for (i = 1; i <= rowCount; i++) {
+            x = [];
+            for(c in n) {
+                    x.push($('[class*="ag-body-container"] [role="row"]:nth-child('+i+') [col-id="'+ n[c]+'"]').text());
+                    if ($('[class*="ag-body-container"] [role="row"]:nth-child('+i+') [col-id="amount"]').text().trim().indexOf("-") >= 0)
+                      if ($('[class*="ag-body-container"] [role="row"]:nth-child('+i+') [col-id="amount"]').css('color') != "rgb(224, 67, 62)")
+                        failedNegativeCheck.push($( this ).text().trim());
+
+          };
+          console.log("row is---->"+x);
+           x.splice(0, duplicate); repeat = x.length;
+           console.log("Duplicate------>:"+duplicate+"repeat"+repeat);
+           if($('#alert-grid [ref="btFirst"]').attr("disabled")!="disabled" && i==19)
+            break;
+           if (x.length > 0) {
+     console.log("test ------>x"+x);
+           for(b in x) { y[i].push(x[b]) }
+           }
+     }
+          if(failedNegativeCheck.length==0)
+          str = "Done";
+        };
+        getData()
+     return str;
+    })();
+  """
+  And the executionResult should be "Done"
+
+@StepDef
+##############################################################
+#-------------------------------------------------------------
+#Step to combine results
+# EXAMPLE: And I extract total alert balance data
+#-------------------------------------------------------------
+Scenario:  I extract total alert balance data
+  And I execute javascript "$('#alert-grid [ref="btNext"]').click();pageCount++;"
+  And I wait 5 seconds
+  And I get the alert data from UI
+  And I execute javascript "z.push(y)"
+
+@StepDef
+##############################################################
+#-------------------------------------------------------------
+#Step to combine results
+# EXAMPLE: And I verify alert result for "test1"
+#-------------------------------------------------------------
+Scenario:  I verify alert result for "<testcase>"
+  And I click heading
+  And I execute javascript "z=[];totalPage=parseInt($('span [ref="lbTotal"]').text());pageCount=1;"
+  And I get the alert data from UI
+  And I execute javascript "z.push(y)"
+  And button disabled is defined by javascript
+  """
+  (function(){
+  return $('#alert-grid [ref="btNext"]').attr("disabled") != "disabled"
+  })();
+  """
+  And I extract total alert balance data while button disabled using 60 minute timeout
+  And I execute javascript "$('#alert-grid [ref="btFirst"]').click()"
+  Then I verify execution results for "$<testcase>"
+
+
+@StepDef
+##############################################################
+#-------------------------------------------------------------
+#Step to get alerts details extract
+#Example:And I verify alerts csv for "<testcaseNo>"
+#-------------------------------------------------------------
+Scenario: I verify alerts csv for "<testcaseNo>"
+  And I right click first row of alertsGrid
+  And I wait for export button
+  And I click export button
+  And export to csv button should be displayed
+  And export to excel button should be displayed
+  And dropdownList is defined by javascript "(function(){return $('.ag-menu').length})()"
+  And dropdownList should be "2"
+  And I click export to csv button
+  And I save file using "," as delimiter with sort on "none" for "$<testcaseNo>"
+  And I compare result for "$<testcaseNo>"
+  And testcaseIs is "$<testcaseNo>:''"
+  And I verify testresult of testcasesno "${testcaseNoIs}" for each testcaseNoIs in testcaseIs delimited by ":"
+
+
+
+@StepDef
+@DataTable(header="top")
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Update alert execution date form backend
+#----------------------------------------------------------------------------------------
+Scenario:I update alert execution date
+  Given I update alert execution date for fund "${data[fundCode]}" to "${data[date]}" for each data record
+
+@StepDef
+Scenario:I update alert execution date for fund "<fundCode>" to "<date>"
+  And updateDate is defined by javascript
+    """
+      (function (){
+        if("$<date>".indexOf("SYSDATE")>=0 || "$<date>".indexOf("sysdate")>=0){
+          return "$<date>";
+        }else{
+            return "'$<date>'";
+        }
+      })()
+    """
+  And I execute query "update cms_bdr_alert set LAST_ACTIONED_DATE=${updateDate},STRAT_EXEC_DATETIME=${updateDate} where fund_code in ($<fundCode>) and status=1" to update " " rows
+
+ @StepDef
+ ################################################################################################
+ #-----------------------------------------------------------------------------------------------
+ #Step to verify alert start date
+ #Example:And I verify alert start date is equal to "September 23, 2017"
+ #Example:And I verify alert end date is equal to "September 23, 2017"
+ #Example:And I verify alert start date is equal to "today-2"
+ #-----------------------------------------------------------------------------------------------
+ Scenario: I verify alert <type> date is equal to "<date>"
+ 	  And fullDate is defined by javascript
+    """
+    (function (){
+      var fullDate='';
+      if("$<date>".indexOf("today")>=0 || "$<date>".indexOf("TODAY")>=0){
+          if("$<date>".indexOf("+")>=0){
+              fullDate=moment().add("$<date>".split("+")[1], 'days').format("LL");
+          }
+          else if("$<date>".indexOf("-")>=0){
+              fullDate=moment().subtract("$<date>".split("-")[1], 'days').format("LL");
+          }else{
+              fullDate=moment().format("LL")
+          }
+        }else{
+          fullDate="$<date>";
+        }
+        console.log("Full date is "+fullDate)
+        return fullDate;
+    })()
+    """
+ 	  And alert $<type> date should be "${fullDate}"
+
+
+@StepDef
+################################################################################################
+#-----------------------------------------------------------------------------------------------
+#Step to change alert start/end date
+#Examples:And I change alert page start date to "today+1"
+#Examples:And I change alert page start date to "17/09/2017"
+#-----------------------------------------------------------------------------------------------
+Scenario: I change alert page <type> date to "<date>"
+  And fullDate is defined by javascript
+  """
+  (function (){
+    var fullDate='';
+    if("$<date>".indexOf("today")>=0 || "$<date>".indexOf("TODAY")>=0){
+        if("$<date>".indexOf("+")>=0){
+            var calculatedDate=moment().add("$<date>".split("+")[1], 'days');
+            fullDate=calculatedDate.format("D")+" "+calculatedDate.format("MMM")+" "+calculatedDate.format("YYYY")
+        }
+        else if("$<date>".indexOf("-")>=0){
+          var calculatedDate=moment().subtract("$<date>".split("-")[1], 'days');
+          fullDate=calculatedDate.format("D")+" "+calculatedDate.format("MMM")+" "+calculatedDate.format("YYYY")
+        }else{
+          var calculatedDate=moment();
+          fullDate=calculatedDate.format("D")+" "+calculatedDate.format("MMM")+" "+calculatedDate.format("YYYY")
+        }
+      }else{
+        var m = moment();
+        var newDate = moment("$<date>", "DD/MM/YYYY");
+        m.set(newDate.toObject());
+        fullDate=m.format("D")+" "+m.format("MMM")+" "+m.format("YYYY");
+      }
+      console.log("Full date to set: "+fullDate)
+      return fullDate;
+  })()
+  """
+  And I select alert $<type> date ${fullDate}
+
+
+@StepDef
+################################################################################################
+#-----------------------------------------------------------------------------------------------
+#Step to check alert end date calender is not visible
+#Examples:And I check alert end date is not visible
+#-----------------------------------------------------------------------------------------------
+Scenario: I check alert end date is not visible
+  And checkResult is defined by javascript
+    """
+    (function (){
+        var result="";
+        var alertEndDateNode=$('alert-end-date-picker > span > span');
+        if(alertEndDateNode.length==0)
+          result="Done";
+        return result;
+        })()
+    """
+  And checkResult should be "Done"
+
+
+@StepDef
+################################################################################################
+#-----------------------------------------------------------------------------------------------
+#Step to verify email sent icon
+#Examples:And I verify email sent icon for fund "HPF" having status "OPEN" is present
+#-----------------------------------------------------------------------------------------------
+Scenario:I verify email sent icon for fund "<fundName>" having status "<statusIs>" <is> present
+    And iconPresent is defined by javascript
+      """
+      (function(){$('.ag-body-viewport [role="row"] ').each(function(index){
+      result="is not";
+            if($(this).text().indexOf('$<fundName>$<statusIs>')>=0){
+            if( $(this).find('[col-id="emailSent"] i').is(":visible")) {result="is"} else{result= "is not"}
+
+          }
+      });return result })()
+      """
+      And iconPresent should be "$<is>"
+
+@StepDef
+################################################################################################
+#-----------------------------------------------------------------------------------------------
+#Step to verify user can not select groups other that assigned groups
+#Examples:And I verify user can not select groups other that assigned groups
+#-----------------------------------------------------------------------------------------------
+  Scenario: I verify user can not select groups other that assigned groups
+    And verifyCanNotSelectGroup is defined by javascript
+        """
+        (function() {result=""; $('.search-field').click(); if($('.chosen-results .active-result').length==0){result=true}; $('h1').click();return result })()
+        """
+    And verifyCanNotSelectGroup should be "true"
+    And I click heading
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Steps to lock fund without checking button status
+#----------------------------------------------------------------------------------------
+Scenario:I only lock fund "<fundName>" having status "<status>"
+  And I select fund "$<fundName>" having status "$<status>"
+  And I click lockToMe
+  And alert box title should be "Success"
+  And alert box message should be "Alert lock succeeded."
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+  And I verify fund "$<fundName>" with status "$<status>" is locked
+
+@StepDef
+#########################################################################################
+#----------------------------------------------------------------------------------------
+#Steps to unlock fund without checking button status
+#----------------------------------------------------------------------------------------
+Scenario:I only unlock fund "<fundName>" having status "<status>"
+  And I select fund "$<fundName>" having status "$<status>"
+  And I click unlockAlert
+  And alert box title should be "Success"
+  And alert box message should be "Alert unlock succeeded."
+  And dialogExist is defined by javascript "(function(){return $('.toast-message').is(':visible') })()"
+  And I click notification dialog if dialogExist
+  And I verify fund "$<fundName>" with status "$<status>" is unlocked
+
+@StepDef
+################################################################################################
+#-----------------------------------------------------------------------------------------------
+#Step to verify multiple groups selected on alerts dashboard
+#Example: And I verify selected groups are "HPF Group" on alerts dashboard
+#Example: And I verify selected groups are "Default Group:HPF Group" on alerts dashboard
+#-----------------------------------------------------------------------------------------------
+Scenario: I verify selected groups are "<groupsAre>" on alerts dashboard
+  And verifyGroupResult is defined by javascript
+  """
+  (function(){
+	var groups = "$<groupsAre>";
+	var groupsArray = groups.split(':');
+	var totalGroups=groupsArray.length;
+	var matched=0;
+	var selectedOptionNode=$('select[ng-model="selectedGroups"] ~ div ul[class="chosen-choices"] li > span');
+	var searchOptionNode=$('select[ng-model="selectedGroups"] ~ div ul[class="chosen-choices"] li > input');
+	var result=false;
+	selectedOptionNode.each(function(){
+		console.log($(this).text());
+		if(groupsArray.includes($(this).text().trim())){
+			matched++;
+			console.log(matched);
+		}
+	});
+	if(matched==totalGroups && matched==selectedOptionNode.length && searchOptionNode.val()=="")
+		result=true;
+
+	return result;
+})()
+  """
+  And verifyGroupResult should be "true"
+
+@StepDef
+ ################################################################################################
+ #-----------------------------------------------------------------------------------------------
+ #Step to select multiple groups types on alerts dashboard
+ #Example: And I select group as "group1:group2" on alerts dashboard
+ #-----------------------------------------------------------------------------------------------
+Scenario: I select group as "<groupIs>" on alerts dashboard
+  And groupsAre is "$<groupIs>"
+  And I select "${groupToBeSelected}" group in selector on alerts dashboard for each groupToBeSelected in groupsAre delimited by ":"
+  And I wait 5 seconds
+
+@StepDef
+Scenario:I select "<group>" group in selector on alerts dashboard
+  And I click group selector on alerts dashboard
+  And I enter "$<group>" in group selector on alerts dashboard
+
+@StepDef
+################################################################################################
+#-----------------------------------------------------------------------------------------------
+#Step to deselect specific group on alerts dashboard
+#Example: And I deselect group "HPF Group" on alerts dashboard
+#-----------------------------------------------------------------------------------------------
+Scenario: I deselect group "<groupIs>" on alerts dashboard
+  And deselect group can be located by javascript
+    """
+    (function test(){
+      $('.chosen-choices li').each(function(){
+      	if($(this).text().trim()=="$<groupIs>"){
+      		 a=$(this).find("a");
+          }
+      });
+    return a;
+    })()
+    """
+  And I click deselect group
+  And I wait 10 seconds
+  And I verify group "$<groupIs>" does not exist on alerts dashboard
+
+@StepDef
+###########################################
+#------------------------------------------
+#Step to verify group does not exist
+#------------------------------------------
+Scenario: I verify group "<groupName>" does not exist on alerts dashboard
+  And groupPresent is defined by javascript
+  """
+    (function(){
+        var result=true;
+      $('.chosen-choices li').each(function(){
+        if($(this).text().trim()=="$<groupName>"){
+            result=false;
+        }});
+      return result;
+    })()
+  """
+  And groupPresent should be "true"
+
+@StepDef
+###########################################
+#------------------------------------------
+#Step to verify alerts have same execution time
+#------------------------------------------
+Scenario: I verify all alerts have same execution time
+  And verifiedExecutedAtSameTime is defined by javascript
+  """
+  (function(){
+    var result=true;
+    var firstRowExecutionTime="";
+    $('#alert-grid .ag-body-viewport [role="row"] [col-id="stratExecDatetime"]').each(function(index){
+      if(index==0){
+        firstRowExecutionTime=$(this).text();
+      }else{
+      	if($(this).text()==firstRowExecutionTime){
+      		result=true;
+      	}else{
+      		result=false;
+      		return false;
+      	}
+      }
+    })
+    return result;
+  })()
+  """
+  And verifiedExecutedAtSameTime should be "true"
